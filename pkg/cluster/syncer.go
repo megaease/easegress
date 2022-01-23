@@ -20,6 +20,7 @@ package cluster
 import (
 	"bytes"
 	"context"
+	"sync"
 	"time"
 
 	"go.etcd.io/etcd/api/v3/mvccpb"
@@ -35,6 +36,7 @@ import (
 // is to ensure data consistency, as Etcd watcher may be cancelled if it cannot catch
 // up with the key-value store.
 type Syncer struct {
+	sync.WaitGroup
 	cluster      *cluster
 	client       *clientv3.Client
 	pullInterval time.Duration
@@ -47,6 +49,7 @@ func (c *cluster) Syncer(pullInterval time.Duration) (*Syncer, error) {
 		return nil, err
 	}
 	return &Syncer{
+		WaitGroup:    sync.WaitGroup{},
 		cluster:      c,
 		client:       client,
 		pullInterval: pullInterval,
@@ -184,7 +187,9 @@ func (s *Syncer) Sync(key string) (<-chan *string, error) {
 		}
 	}
 
+	s.Add(1)
 	go func() {
+		defer s.Done()
 		defer close(ch)
 		s.run(key, false, fn)
 	}()
@@ -200,7 +205,9 @@ func (s *Syncer) SyncRaw(key string) (<-chan *mvccpb.KeyValue, error) {
 		ch <- data[key]
 	}
 
+	s.Add(1)
 	go func() {
+		defer s.Done()
 		defer close(ch)
 		s.run(key, false, fn)
 	}()
@@ -220,7 +227,9 @@ func (s *Syncer) SyncPrefix(prefix string) (<-chan map[string]string, error) {
 		ch <- m
 	}
 
+	s.Add(1)
 	go func() {
+		defer s.Done()
 		defer close(ch)
 		s.run(prefix, true, fn)
 	}()
@@ -241,7 +250,9 @@ func (s *Syncer) SyncRawPrefix(prefix string) (<-chan map[string]*mvccpb.KeyValu
 		ch <- m
 	}
 
+	s.Add(1)
 	go func() {
+		defer s.Done()
 		defer close(ch)
 		s.run(prefix, true, fn)
 	}()
@@ -252,4 +263,5 @@ func (s *Syncer) SyncRawPrefix(prefix string) (<-chan map[string]*mvccpb.KeyValu
 // Close closes the syncer.
 func (s *Syncer) Close() {
 	close(s.done)
+	s.Wait()
 }
