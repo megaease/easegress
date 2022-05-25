@@ -106,7 +106,6 @@ func (v *specVisitor) Visit(fn func(*spec) error) error {
 		specs = append(specs, s)
 		return nil
 	})
-
 	if err != nil {
 		ExitWithError(err)
 	}

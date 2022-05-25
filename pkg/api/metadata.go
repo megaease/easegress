@@ -69,7 +69,6 @@ func (s *Server) initMetadata() {
 		sort.Strings(filterMetaBook[kind].Results)
 	}
 	sort.Strings(filterKinds)
-
 }
 
 func (s *Server) metadataAPIEntries() []*Entry {

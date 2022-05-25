@@ -58,7 +58,6 @@ func main() {
 
 	if opt.SignalUpgrade {
 		pid, err := pidfile.Read(opt)
-
 		if err != nil {
 			logger.Errorf("failed to read pidfile: %v", err)
 			os.Exit(1)

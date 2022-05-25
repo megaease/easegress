@@ -73,7 +73,6 @@ func TestDirFunc(t *testing.T) {
 	if err := RemoveAll(dir + "_bak"); err != nil {
 		t.Errorf("%v", err)
 	}
-
 }
 
 func TestIsDirEmpty(t *testing.T) {

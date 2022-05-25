@@ -35,9 +35,7 @@ import (
 	"github.com/megaease/easegress/pkg/object/meshcontroller/spec"
 )
 
-var (
-	appSubjectKeyID = []byte{102, 202, 33, 104, 96}
-)
+var appSubjectKeyID = []byte{102, 202, 33, 104, 96}
 
 // MeshCertProvider is the EaseMesh in-memory, Self-Sign type cert provider.
 type MeshCertProvider struct {

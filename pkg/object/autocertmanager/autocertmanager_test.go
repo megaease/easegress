@@ -499,12 +499,15 @@ type dnsProvideMock struct{}
 func (dpm *dnsProvideMock) GetRecords(ctx context.Context, zone string) ([]libdns.Record, error) {
 	return nil, nil
 }
+
 func (dpm *dnsProvideMock) AppendRecords(ctx context.Context, zone string, recs []libdns.Record) ([]libdns.Record, error) {
 	return nil, fmt.Errorf("append error")
 }
+
 func (dpm *dnsProvideMock) SetRecords(ctx context.Context, zone string, recs []libdns.Record) ([]libdns.Record, error) {
 	return nil, nil
 }
+
 func (dpm *dnsProvideMock) DeleteRecords(ctx context.Context, zone string, recs []libdns.Record) ([]libdns.Record, error) {
 	return nil, nil
 }

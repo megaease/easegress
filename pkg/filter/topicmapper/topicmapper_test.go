@@ -63,25 +63,34 @@ func TestTopicMapper(t *testing.T) {
 		{
 			mqttTopic: "/d2s/abc/phone/123/log/error",
 			topic:     "to_cloud",
-			headers:   map[string]string{"d2s": "d2s", "tenant": "abc", "device_type": "phone", "things_id": "123", "event": "log", "eventName": "error"}},
+			headers:   map[string]string{"d2s": "d2s", "tenant": "abc", "device_type": "phone", "things_id": "123", "event": "log", "eventName": "error"},
+		},
 		{
 			mqttTopic: "/d2s/xyz/tv/234/status/shutdown",
 			topic:     "to_cloud",
-			headers:   map[string]string{"d2s": "d2s", "tenant": "xyz", "device_type": "tv", "things_id": "234", "event": "status", "eventName": "shutdown"}},
+			headers:   map[string]string{"d2s": "d2s", "tenant": "xyz", "device_type": "tv", "things_id": "234", "event": "status", "eventName": "shutdown"},
+		},
 		{
 			mqttTopic: "/d2s/opq/car/345/raw",
 			topic:     "to_raw",
-			headers:   map[string]string{"d2s": "d2s", "tenant": "opq", "device_type": "car", "things_id": "345", "event": "raw"}},
+			headers:   map[string]string{"d2s": "d2s", "tenant": "opq", "device_type": "car", "things_id": "345", "event": "raw"},
+		},
 		{
 			mqttTopic: "/g2s/gwTenantId/gwInfoModelId/gwThingsId/d2s/tenantId/infoModelId/thingsId/data",
 			topic:     "to_cloud",
-			headers: map[string]string{"g2s": "g2s", "gwTenantId": "gwTenantId", "gwInfoModelId": "gwInfoModelId", "gwThingsId": "gwThingsId",
-				"d2s": "d2s", "tenantId": "tenantId", "infoModelId": "infoModelId", "thingsId": "thingsId", "event": "data"}},
+			headers: map[string]string{
+				"g2s": "g2s", "gwTenantId": "gwTenantId", "gwInfoModelId": "gwInfoModelId", "gwThingsId": "gwThingsId",
+				"d2s": "d2s", "tenantId": "tenantId", "infoModelId": "infoModelId", "thingsId": "thingsId", "event": "data",
+			},
+		},
 		{
 			mqttTopic: "/g2s/gw123/gwInfo234/gwID345/d2s/456/654/123/raw",
 			topic:     "to_raw",
-			headers: map[string]string{"g2s": "g2s", "gwTenantId": "gw123", "gwInfoModelId": "gwInfo234", "gwThingsId": "gwID345",
-				"d2s": "d2s", "tenantId": "456", "infoModelId": "654", "thingsId": "123", "event": "raw"}},
+			headers: map[string]string{
+				"g2s": "g2s", "gwTenantId": "gw123", "gwInfoModelId": "gwInfo234", "gwThingsId": "gwID345",
+				"d2s": "d2s", "tenantId": "456", "infoModelId": "654", "thingsId": "123", "event": "raw",
+			},
+		},
 	}
 
 	for _, tt := range tests {

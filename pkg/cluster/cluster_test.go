@@ -51,7 +51,6 @@ func mockClusters(count int) []*cluster {
 		opts[i].ClusterJoinURLs = opts[0].ClusterListenPeerURLs
 
 		cls, err := New(opts[i])
-
 		if err != nil {
 			totalRetryTime := time.After(60 * time.Second)
 		Loop:
@@ -194,7 +193,6 @@ func TestClusterStart(t *testing.T) {
 	opts, _, _ := mockMembers(1)
 
 	cls, err := New(opts[0])
-
 	if err != nil {
 		t.Errorf("init failed: %v", err)
 	}
@@ -212,7 +210,6 @@ func TestClusterPurgeMember(t *testing.T) {
 	opts, _, _ := mockMembers(2)
 
 	cls, err := New(opts[0])
-
 	if err != nil {
 		t.Errorf("init failed: %v", err)
 	}
@@ -227,7 +224,6 @@ func TestClusterPurgeMember(t *testing.T) {
 func TestClusterSyncer(t *testing.T) {
 	opts, _, _ := mockMembers(1)
 	cls, err := New(opts[0])
-
 	if err != nil {
 		t.Errorf("init failed: %v", err)
 	}
@@ -240,7 +236,6 @@ func TestClusterSyncer(t *testing.T) {
 	}
 
 	syncer, err := c.Syncer(3 * time.Second)
-
 	if err != nil {
 		t.Errorf("new syncer failed: %v", err)
 	}
@@ -307,7 +302,6 @@ func TestClusterSyncer(t *testing.T) {
 func TestClusterWatcher(t *testing.T) {
 	opts, _, _ := mockMembers(1)
 	cls, err := New(opts[0])
-
 	if err != nil {
 		t.Errorf("init failed: %v", err)
 	}
@@ -320,7 +314,6 @@ func TestClusterWatcher(t *testing.T) {
 	}
 
 	watcher, err := c.Watcher()
-
 	if err != nil {
 		t.Errorf("new syncer failed: %v", err)
 	}
@@ -358,7 +351,6 @@ func TestClusterWatcher(t *testing.T) {
 
 	rawpchan, err := watcher.WatchRawPrefix("/abcd")
 	if err != nil {
-
 		t.Errorf("watcher watch failed: %v", err)
 	}
 
@@ -448,7 +440,6 @@ func TestUtil(t *testing.T) {
 func TestMutexAndOP(t *testing.T) {
 	opts, _, _ := mockMembers(1)
 	cls, err := New(opts[0])
-
 	if err != nil {
 		t.Errorf("init failed: %v", err)
 	}

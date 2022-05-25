@@ -19,7 +19,7 @@ package context
 
 import "net/http"
 
-//the error code list which align with the HTTP status code
+// the error code list which align with the HTTP status code
 const (
 	EGStatusContinue              = http.StatusContinue
 	EGStatusSwitchingProtocols    = http.StatusSwitchingProtocols

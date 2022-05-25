@@ -33,7 +33,6 @@ func TestValidFSM(t *testing.T) {
 	}
 
 	fmt.Printf("FSM SUCC, current event is %s\n", fsm.currentState)
-
 }
 
 func TestInValidStateFSM(t *testing.T) {
@@ -194,6 +193,7 @@ func TestValidEventAtActive3(t *testing.T) {
 		t.Errorf("active's next state should be active after provision pending!")
 	}
 }
+
 func TestValidEventAtActive4(t *testing.T) {
 	fsm, err := InitFSM(ActiveState)
 	if err != nil {
@@ -219,6 +219,7 @@ func TestInValidEventAtActive(t *testing.T) {
 		t.Errorf("start event should not be allowed in active state")
 	}
 }
+
 func TestValidEventAtInActive1(t *testing.T) {
 	fsm, err := InitFSM(InactiveState)
 	if err != nil {
@@ -263,6 +264,7 @@ func TestValidEventAtInActive3(t *testing.T) {
 		t.Errorf("active's next state should be pending after provision pending!")
 	}
 }
+
 func TestValidEventAtInActive4(t *testing.T) {
 	fsm, err := InitFSM(InactiveState)
 	if err != nil {
@@ -322,6 +324,7 @@ func TestValidEventAtFailed3(t *testing.T) {
 		t.Errorf("failed's next state should be pending after provision pending!")
 	}
 }
+
 func TestValidEventAtFailed4(t *testing.T) {
 	fsm, err := InitFSM(FailedState)
 	if err != nil {

@@ -117,8 +117,10 @@ func getProtocols(f Filter) (map[context.Protocol]struct{}, error) {
 	return ans, nil
 }
 
-var runningPipelines = sync.Map{}
-var filterRegistry = map[string]Filter{}
+var (
+	runningPipelines = sync.Map{}
+	filterRegistry   = map[string]Filter{}
+)
 
 func pipelineName(name string, protocol context.Protocol) string {
 	return string(protocol) + "/" + name

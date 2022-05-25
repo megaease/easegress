@@ -62,8 +62,10 @@ type (
 	}
 )
 
-var _ pipeline.Filter = (*MQTTClientAuth)(nil)
-var _ pipeline.MQTTFilter = (*MQTTClientAuth)(nil)
+var (
+	_ pipeline.Filter     = (*MQTTClientAuth)(nil)
+	_ pipeline.MQTTFilter = (*MQTTClientAuth)(nil)
+)
 
 // Kind return kind of MQTTClientAuth
 func (a *MQTTClientAuth) Kind() string {

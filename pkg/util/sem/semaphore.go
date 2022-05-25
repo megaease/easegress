@@ -26,7 +26,7 @@ import (
 
 const maxCapacity int64 = 20_000_000
 
-//Semaphore supports to change the max sema amount at runtime.
+// Semaphore supports to change the max sema amount at runtime.
 //  Semaphore employs golang.org/x/sync/semaphore.Weighted with a maxCapacity.
 //  And tuning the realCapacity by an Acquire and Release in the background.
 //  the realCapacity can not exceed the maxCapacity.

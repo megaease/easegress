@@ -94,6 +94,7 @@ func (w *mockWatcher) WatchRaw(key string) (<-chan *clientv3.Event, error)      
 func (w *mockWatcher) WatchRawPrefix(prefix string) (<-chan map[string]*clientv3.Event, error) {
 	return nil, nil
 }
+
 func (w *mockWatcher) WatchWithOp(key string, ops ...cluster.ClientOp) (<-chan map[string]*string, error) {
 	return w.delCh, nil
 }

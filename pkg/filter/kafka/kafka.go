@@ -52,8 +52,10 @@ type (
 	}
 )
 
-var _ pipeline.Filter = (*Kafka)(nil)
-var _ pipeline.MQTTFilter = (*Kafka)(nil)
+var (
+	_ pipeline.Filter     = (*Kafka)(nil)
+	_ pipeline.MQTTFilter = (*Kafka)(nil)
+)
 
 // Kind return kind of Kafka
 func (k *Kafka) Kind() string {

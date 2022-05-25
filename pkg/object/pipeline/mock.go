@@ -24,11 +24,9 @@ import (
 	"github.com/megaease/easegress/pkg/supervisor"
 )
 
-type mockFilter struct {
-}
+type mockFilter struct{}
 
-type mockSpec struct {
-}
+type mockSpec struct{}
 
 var _ Filter = (*mockFilter)(nil)
 

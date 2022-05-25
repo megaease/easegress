@@ -146,5 +146,4 @@ func TestCompress(t *testing.T) {
 	if header.Get(httpheader.KeyContentEncoding) != "gzip" {
 		t.Error("body should be gziped")
 	}
-
 }

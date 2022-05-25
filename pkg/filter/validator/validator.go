@@ -18,9 +18,8 @@
 package validator
 
 import (
-	"net/http"
-
 	"fmt"
+	"net/http"
 
 	"github.com/megaease/easegress/pkg/context"
 	"github.com/megaease/easegress/pkg/object/httppipeline"

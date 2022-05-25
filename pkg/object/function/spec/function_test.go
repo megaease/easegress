@@ -150,7 +150,6 @@ func TestNext(t *testing.T) {
 	}
 
 	updated, err := f.Next(ReadyEvent)
-
 	if err != nil {
 		t.Errorf("test failed Next should succ, err: %v", err)
 	}

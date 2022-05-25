@@ -36,9 +36,7 @@ const (
 	resultBodyReadErr         = "bodyReadErr"
 )
 
-var (
-	errJSONEncodeDecode = errors.New(resultJSONEncodeDecodeErr)
-)
+var errJSONEncodeDecode = errors.New(resultJSONEncodeDecodeErr)
 
 func init() {
 	httppipeline.Register(&HeaderToJSON{})

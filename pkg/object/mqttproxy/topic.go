@@ -100,7 +100,6 @@ func (mgr *TopicManager) findSubscribers(topic string) (map[string]byte, error) 
 			for nodeLevel, nextNode := range node.nodes {
 				if nodeLevel == "#" {
 					nextNode.addClients(ans)
-
 				} else if nodeLevel == "+" || nodeLevel == topicLevel {
 					nextLevelNodes = append(nextLevelNodes, nextNode)
 				}
@@ -191,7 +190,6 @@ func splitTopic(topic string) ([]string, bool) {
 
 		} else if char == '+' {
 			wildCardFlag = true
-
 		} else if char == '#' {
 			wildCardFlag = true
 			if i != len(topic)-1 {

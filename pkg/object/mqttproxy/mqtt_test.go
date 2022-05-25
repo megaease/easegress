@@ -872,7 +872,6 @@ func TestHTTPPublish(t *testing.T) {
 				}
 			}(data)
 		}
-
 	}()
 
 	ans := map[string]struct{}{}
@@ -1114,6 +1113,7 @@ Wf86aX6PepsntZv2GYlA5UpabfT2EZICICpJ5h/iI+i341gBmLiAFQOyTDT+/wQc
 6MF9+Yw1Yy0t
 -----END CERTIFICATE-----
 `
+
 const keyPem = `
 -----BEGIN EC PRIVATE KEY-----
 MHcCAQEEIIrYSSNQFaA2Hwf1duRSxKtLYX5CB04fSeQ6tF1aY/PuoAoGCCqGSM49

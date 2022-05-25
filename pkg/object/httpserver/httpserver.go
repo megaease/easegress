@@ -62,7 +62,6 @@ func (hs *HTTPServer) DefaultSpec() interface{} {
 
 // Init initializes HTTPServer.
 func (hs *HTTPServer) Init(superSpec *supervisor.Spec, muxMapper protocol.MuxMapper) {
-
 	hs.runtime = newRuntime(superSpec, muxMapper)
 
 	hs.runtime.eventChan <- &eventReload{

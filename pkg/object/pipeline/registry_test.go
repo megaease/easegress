@@ -29,9 +29,11 @@ type allProtocolFilter struct {
 	mockFilter
 }
 
-var _ HTTPFilter = (*allProtocolFilter)(nil)
-var _ MQTTFilter = (*allProtocolFilter)(nil)
-var _ TCPFilter = (*allProtocolFilter)(nil)
+var (
+	_ HTTPFilter = (*allProtocolFilter)(nil)
+	_ MQTTFilter = (*allProtocolFilter)(nil)
+	_ TCPFilter  = (*allProtocolFilter)(nil)
+)
 
 func (f *allProtocolFilter) Kind() string {
 	return "allProtocolFilter"
@@ -69,11 +71,9 @@ type emptyKindFilter struct {
 func (f *emptyKindFilter) Kind() string { return "" }
 
 // noPtrFilter is filter but not a pointer
-type nonPtrFilter struct {
-}
+type nonPtrFilter struct{}
 
-type noPtrSpec struct {
-}
+type noPtrSpec struct{}
 
 var _ Filter = nonPtrFilter{}
 

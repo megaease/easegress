@@ -113,7 +113,7 @@ func (gf *GlobalFilter) CreateAndUpdatePipeline(spec *pipelineSpec, previousGene
 	}
 
 	// init or update pipeline
-	var pipeline = new(httppipeline.HTTPPipeline)
+	pipeline := new(httppipeline.HTTPPipeline)
 	if previousGeneration != nil {
 		pipeline.Inherit(specs, previousGeneration, nil)
 	} else {
@@ -199,12 +199,10 @@ func (gf *GlobalFilter) afterHandle(ctx context.HTTPContext) string {
 
 // Close closes GlobalFilter itself.
 func (gf *GlobalFilter) Close() {
-
 }
 
 // Validate validates Spec.
 func (s *Spec) Validate() (err error) {
-
 	err = s.BeforePipeline.Validate()
 	if err != nil {
 		return fmt.Errorf("before pipeline is invalid: %v", err)
@@ -232,7 +230,7 @@ func (gf *GlobalFilter) reload(previousGeneration *GlobalFilter) {
 			panic(fmt.Errorf("create before pipeline failed: %v", err))
 		}
 	}
-	//create and update afterPipeline entity
+	// create and update afterPipeline entity
 	if len(gf.spec.AfterPipeline.Flow) != 0 {
 		if previousGeneration != nil {
 			previous := previousGeneration.afterPipeline.Load()

@@ -66,7 +66,7 @@ jobs:
         run: |
           go mod verify
           go mod download
-          go test -v ./...
+          go test -v -race ./...
   integration-test-ubuntu:
     needs: [test, test-win]
     runs-on: ubuntu-latest

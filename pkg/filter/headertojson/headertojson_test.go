@@ -73,7 +73,7 @@ func TestHandleHTTP(t *testing.T) {
 	h2j.Init(filterSpec)
 
 	{
-		//test http request with body
+		// test http request with body
 		bodyMap := map[string]interface{}{
 			"topic": "log",
 			"id":    "abc123",

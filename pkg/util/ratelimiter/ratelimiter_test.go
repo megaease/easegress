@@ -39,6 +39,7 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 	os.Exit(code)
 }
+
 func TestNewDefaultPolicy(t *testing.T) {
 	policy := NewDefaultPolicy()
 
@@ -48,6 +49,7 @@ func TestNewDefaultPolicy(t *testing.T) {
 		t.Errorf("Incorrect default configuration %v\n", policy)
 	}
 }
+
 func TestConcurrent(t *testing.T) {
 	policy := NewPolicy(50*time.Millisecond, 10*time.Millisecond, 5)
 

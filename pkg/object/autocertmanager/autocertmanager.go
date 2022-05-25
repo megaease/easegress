@@ -45,7 +45,7 @@ const (
 )
 
 type (
-	//AutoCertManager is the controller for Automated Certificate Management.
+	// AutoCertManager is the controller for Automated Certificate Management.
 	AutoCertManager struct {
 		super     *supervisor.Supervisor
 		superSpec *supervisor.Spec
@@ -89,9 +89,7 @@ type (
 	}
 )
 
-var (
-	globalACM atomic.Value
-)
+var globalACM atomic.Value
 
 // Validate validates the spec of AutoCertManager.
 func (spec *Spec) Validate() error {

@@ -54,9 +54,7 @@ type (
 	WalkFunc func(entity *ObjectEntity) bool
 )
 
-var (
-	globalSuper *Supervisor
-)
+var globalSuper *Supervisor
 
 func loadInitialObjects(s *Supervisor, paths []string) map[string]string {
 	objs := map[string]string{}

@@ -631,7 +631,6 @@ func (inf *meshInformer) OnIngressControllerCert(instanceID string, fn CertFunc)
 	storeKey := layout.IngressControllerInstanceCertKey(instanceID)
 	syncerKey := fmt.Sprintf("ingresscontroller-%s-cert", instanceID)
 	return inf.onCert(storeKey, syncerKey, fn)
-
 }
 
 func (inf *meshInformer) OnServerCert(serviceName, instanceID string, fn CertFunc) error {

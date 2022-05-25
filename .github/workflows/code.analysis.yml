@@ -31,7 +31,9 @@ jobs:
       uses: morphy2k/revive-action@v2.3.1
 
     - name: Check formatting
-      run: test -z $(gofmt -l .) || (gofmt -l . && exit 1)
-      
+      run: |
+        go install mvdan.cc/gofumpt@latest
+        test -z "$(gofumpt -s -l .)" || echo "Please run 'gofumpt -l -w .'"
+
     - name: misspell
       uses: sobolevn/misspell-fixer-action@0.1.0

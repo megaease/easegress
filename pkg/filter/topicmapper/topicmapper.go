@@ -43,8 +43,10 @@ type (
 	}
 )
 
-var _ pipeline.Filter = (*TopicMapper)(nil)
-var _ pipeline.MQTTFilter = (*TopicMapper)(nil)
+var (
+	_ pipeline.Filter     = (*TopicMapper)(nil)
+	_ pipeline.MQTTFilter = (*TopicMapper)(nil)
+)
 
 // Kind return kind of TopicMapper
 func (k *TopicMapper) Kind() string {

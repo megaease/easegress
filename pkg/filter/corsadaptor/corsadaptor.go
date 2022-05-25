@@ -90,7 +90,6 @@ func (a *CORSAdaptor) Init(filterSpec *httppipeline.FilterSpec) {
 
 // Inherit inherits previous generation of CORSAdaptor.
 func (a *CORSAdaptor) Inherit(filterSpec *httppipeline.FilterSpec, previousGeneration httppipeline.Filter) {
-
 	previousGeneration.Close()
 	a.Init(filterSpec)
 }

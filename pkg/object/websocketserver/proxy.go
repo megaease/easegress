@@ -39,17 +39,15 @@ const (
 	xForwardedProto = "X-Forwarded-Proto"
 )
 
-var (
-	// headersToSkip are gorilla library's request headers, our websocket proxy should not set.
-	headersToSkip = map[string]struct{}{
-		"Upgrade":                  {},
-		"Connection":               {},
-		"Sec-Websocket-Key":        {},
-		"Sec-Websocket-Version":    {},
-		"Sec-Websocket-Extensions": {},
-		"Sec-Websocket-Protocol":   {},
-	}
-)
+// headersToSkip are gorilla library's request headers, our websocket proxy should not set.
+var headersToSkip = map[string]struct{}{
+	"Upgrade":                  {},
+	"Connection":               {},
+	"Sec-Websocket-Key":        {},
+	"Sec-Websocket-Version":    {},
+	"Sec-Websocket-Extensions": {},
+	"Sec-Websocket-Protocol":   {},
+}
 
 var (
 	// defaultUpgrader specifies the parameters for upgrading an HTTP

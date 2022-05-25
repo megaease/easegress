@@ -79,7 +79,6 @@ func (f *Fallback) Init(filterSpec *httppipeline.FilterSpec) {
 
 // Inherit inherits previous generation of Fallback.
 func (f *Fallback) Inherit(filterSpec *httppipeline.FilterSpec, previousGeneration httppipeline.Filter) {
-
 	previousGeneration.Close()
 	f.Init(filterSpec)
 }

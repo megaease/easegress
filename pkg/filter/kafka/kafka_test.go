@@ -46,6 +46,7 @@ func (m *mockAsyncProducer) Errors() <-chan *sarama.ProducerError      { return 
 func (m *mockAsyncProducer) Input() chan<- *sarama.ProducerMessage {
 	return m.ch
 }
+
 func (m *mockAsyncProducer) Close() error {
 	return fmt.Errorf("mock producer close failed")
 }

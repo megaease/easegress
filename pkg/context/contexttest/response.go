@@ -18,10 +18,11 @@
 package contexttest
 
 import (
-	"github.com/megaease/easegress/pkg/context"
 	"io"
 	"net/http"
 	"net/http/httptest"
+
+	"github.com/megaease/easegress/pkg/context"
 
 	"github.com/megaease/easegress/pkg/util/httpheader"
 )

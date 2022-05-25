@@ -114,7 +114,6 @@ func TestNewDefaultTextTemplateNothing(t *testing.T) {
 	if s, err := tt.Render("xxx---yyy"); s != "xxx---yyy" || err != nil {
 		t.Errorf("rendering fail , result is %s expect xxx---yyy", s)
 	}
-
 }
 
 func TestNewDefaultTextTemplateSucc(t *testing.T) {
@@ -216,6 +215,7 @@ func TestDummyTemplate_hastemplate(t *testing.T) {
 		t.Error("dummy template doesn't need to has template")
 	}
 }
+
 func TestDummyTemplate_extracttemplaterulemap(t *testing.T) {
 	tt := NewDummyTemplate()
 	if err := tt.SetDict("nothing", "nothing"); err != nil {
@@ -227,7 +227,6 @@ func TestDummyTemplate_extracttemplaterulemap(t *testing.T) {
 	if len(rule) != 0 {
 		t.Errorf("dummy template extract template rule map with none empty : %v", rule)
 	}
-
 }
 
 func TestDummyTemplate_extractrawtemplateuulemap(t *testing.T) {
@@ -241,7 +240,6 @@ func TestDummyTemplate_extractrawtemplateuulemap(t *testing.T) {
 	if len(rule) != 0 {
 		t.Errorf("dummy template extract raw template rule map with none empty : %v", rule)
 	}
-
 }
 
 func TestDummyTemplate_newdummytemplate(t *testing.T) {

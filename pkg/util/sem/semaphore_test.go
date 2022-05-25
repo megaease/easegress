@@ -46,9 +46,7 @@ func TestSemaphoreChangeAtRuntime(t *testing.T) {
 	testcases := []int64{40, 2}
 	for _, c := range testcases {
 		runCase(s, c, t)
-
 	}
-
 }
 
 func runCase(s *Semaphore, maxCount int64, t *testing.T) {

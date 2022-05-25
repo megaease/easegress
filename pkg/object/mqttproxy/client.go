@@ -46,8 +46,10 @@ const (
 	QoS2 byte = 2
 )
 
-type processFn func(*Client, packets.ControlPacket)
-type processFnWithErr func(*Client, packets.ControlPacket) error
+type (
+	processFn        func(*Client, packets.ControlPacket)
+	processFnWithErr func(*Client, packets.ControlPacket) error
+)
 
 var processPacketMap = map[string]processFnWithErr{
 	"*packets.ConnectPacket":     errorWrapper("double connect"),

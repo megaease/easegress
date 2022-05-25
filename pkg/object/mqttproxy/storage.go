@@ -47,8 +47,10 @@ type (
 	}
 )
 
-var _ storage = (*mockStorage)(nil)
-var _ storage = (*clusterStorage)(nil)
+var (
+	_ storage = (*mockStorage)(nil)
+	_ storage = (*clusterStorage)(nil)
+)
 
 func newStorage(cls cluster.Cluster) storage {
 	if cls != nil {

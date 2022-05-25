@@ -70,8 +70,10 @@ type (
 	}
 )
 
-var _ pipeline.Filter = (*ConnectControl)(nil)
-var _ pipeline.MQTTFilter = (*ConnectControl)(nil)
+var (
+	_ pipeline.Filter     = (*ConnectControl)(nil)
+	_ pipeline.MQTTFilter = (*ConnectControl)(nil)
+)
 
 // Kind return kind of ConnectControl
 func (cc *ConnectControl) Kind() string {

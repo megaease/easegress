@@ -86,7 +86,6 @@ func join(prefix string, current string) string {
 		return current
 	}
 	return strings.Join([]string{prefix, current}, ".")
-
 }
 
 // APIErr is the error struct for API

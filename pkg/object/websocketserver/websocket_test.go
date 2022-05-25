@@ -33,9 +33,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	testUpgrader = &websocket.Upgrader{}
-)
+var testUpgrader = &websocket.Upgrader{}
 
 func init() {
 	logger.InitNop()

@@ -117,7 +117,6 @@ func TestAdminValidatmTLS(t *testing.T) {
 	}
 
 	err := a.Validate()
-
 	if err != nil {
 		t.Errorf("admin mTLS should valid, err: %v", err)
 	}
@@ -190,7 +189,6 @@ func TestAdminValidat(t *testing.T) {
 	}
 
 	err := a.Validate()
-
 	if err != nil {
 		t.Errorf("registry type is valid, err: %v", err)
 	}
@@ -759,12 +757,11 @@ func TestIngressHTTPServerSpec(t *testing.T) {
 	}
 
 	_, err := IngressHTTPServerSpec(1233, rule)
-
 	if err != nil {
 		t.Errorf("ingress http server spec failed: %v", err)
 	}
-
 }
+
 func TestSidecarIngressWithResiliencePipelineSpec(t *testing.T) {
 	s := &Service{
 		Name: "order-001",
@@ -959,7 +956,6 @@ func TestPipelineBuilder(t *testing.T) {
 	if len(yaml) == 0 {
 		t.Errorf("pipeline builder yamlconfig failed")
 	}
-
 }
 
 func TestIngressPipelineSpec(t *testing.T) {
@@ -1008,7 +1004,6 @@ func TestIngressPipelineSpec(t *testing.T) {
 		SignTime:    "2021-10-13 12:33:10",
 	}
 	superSpec, err := s.IngressControllerPipelineSpec(instanceSpecs, nil, cert, rootCert)
-
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -1046,7 +1041,6 @@ func TestSidecarIngressPipelineSpecCert(t *testing.T) {
 	}
 
 	superSpec, err := s.SidecarIngressHTTPServerSpec(cert, rootCert)
-
 	if err != nil {
 		t.Fatalf("ingress http server spec failed: %v", err)
 	}
@@ -1060,6 +1054,7 @@ func TestSidecarIngressPipelineSpecCert(t *testing.T) {
 
 	fmt.Println(superSpec.YAMLConfig())
 }
+
 func TestSidecarIngressPipelineSpec(t *testing.T) {
 	s := &Service{
 		Name: "order-001",
@@ -1076,7 +1071,6 @@ func TestSidecarIngressPipelineSpec(t *testing.T) {
 	}
 
 	superSpec, err := s.SidecarIngressHTTPServerSpec(nil, nil)
-
 	if err != nil {
 		t.Fatalf("ingress http server spec failed: %v", err)
 	}
@@ -1110,7 +1104,6 @@ func TestUniqueCanaryHeadersEmpty(t *testing.T) {
 	if len(val) > 0 {
 		t.Errorf("canary header should be none")
 	}
-
 }
 
 func TestUniqueCanaryHeaders(t *testing.T) {

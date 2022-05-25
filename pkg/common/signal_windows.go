@@ -41,7 +41,7 @@ func NotifySignal(c chan<- Signal, sig ...Signal) error {
 		return fmt.Errorf("NotifySignal using nil channel")
 	}
 
-	var pid = os.Getpid()
+	pid := os.Getpid()
 	evts := make([]windows.Handle, 0, len(sig))
 
 	for _, s := range sig {
@@ -61,7 +61,6 @@ func NotifySignal(c chan<- Signal, sig ...Signal) error {
 	go func() {
 		for {
 			ev, err := windows.WaitForMultipleObjects(evts, false, windows.INFINITE)
-
 			if err != nil {
 				log.Printf("WaitForMultipleObjects failed: %v", err)
 				return

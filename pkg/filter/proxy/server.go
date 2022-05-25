@@ -165,7 +165,6 @@ func (s *servers) handleEvent(event *serviceregistry.ServiceEvent) {
 
 func (s *servers) tryUseService() {
 	serviceInstanceSpecs, err := s.serviceRegistry.ListServiceInstances(s.poolSpec.ServiceRegistry, s.poolSpec.ServiceName)
-
 	if err != nil {
 		logger.Warnf("first try to use service %s/%s failed(will try again): %v",
 			s.poolSpec.ServiceRegistry, s.poolSpec.ServiceName, err)

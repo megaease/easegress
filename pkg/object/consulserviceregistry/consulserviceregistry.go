@@ -384,7 +384,6 @@ func (c *ConsulServiceRegistry) ListServiceInstances(serviceName string) (map[st
 	}
 
 	catalogServices, err := client.ListServiceInstances(serviceName)
-
 	if err != nil {
 		return nil, err
 	}
