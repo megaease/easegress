@@ -127,7 +127,6 @@ func (DummyTemplate) HasTemplates(input string) bool {
 // template syntax tree for validation, the valid template and its
 // value can be added into dictionary for rendering
 type TextTemplate struct {
-	ft         *fasttemplate.Template
 	beginToken string
 	endToken   string
 	separator  string
@@ -139,27 +138,15 @@ type TextTemplate struct {
 
 // NewDefault returns Template interface implementer with default config and customize meatTemplates
 func NewDefault(metaTemplates []string) (TemplateEngine, error) {
-	t := TextTemplate{
-		beginToken:    DefaultBeginToken,
-		endToken:      DefaultEndToken,
-		separator:     DefaultSeparator,
-		metaTemplates: metaTemplates,
-		dict:          map[string]interface{}{},
-	}
-
-	if err := t.buildTemplateTree(); err != nil {
-		return DummyTemplate{}, err
-	}
-
-	return t, nil
+	return New(DefaultBeginToken, DefaultEndToken, DefaultSeparator, metaTemplates)
 }
 
 // New returns a new Template interface implementer, return a dummy template if something wrong,
 // and in that case, the dedicated reason will set into error return
 func New(beginToken, endToken, separator string, metaTemplates []string) (TemplateEngine, error) {
 	if len(beginToken) == 0 || len(endToken) == 0 || len(separator) == 0 || len(metaTemplates) == 0 {
-		return DummyTemplate{}, fmt.Errorf("invalid input, beingToken %s, endToken %s, separator = %s , metaTempaltes %v",
-			beginToken, endToken, separator, metaTemplates)
+		format := "invalid parameter: beingToken %s, endToken %s, separator %s, metaTempaltes %v"
+		return nil, fmt.Errorf(format, beginToken, endToken, separator, metaTemplates)
 	}
 	t := &TextTemplate{
 		beginToken:    beginToken,
@@ -170,7 +157,7 @@ func New(beginToken, endToken, separator string, metaTemplates []string) (Templa
 	}
 
 	if err := t.buildTemplateTree(); err != nil {
-		return DummyTemplate{}, err
+		return nil, err
 	}
 
 	return t, nil
@@ -182,7 +169,7 @@ func NewDummyTemplate() TemplateEngine {
 }
 
 // GetDict return the dictionary of texttemplate
-func (t TextTemplate) GetDict() map[string]interface{} {
+func (t *TextTemplate) GetDict() map[string]interface{} {
 	return t.dict
 }
 
@@ -196,10 +183,6 @@ func (t *TextTemplate) indexChild(children []*node, target string) int {
 }
 
 func (t *TextTemplate) addNode(tags []string) {
-	if t.root == nil {
-		t.root = &node{}
-	}
-
 	parent := t.root
 	for _, v := range tags {
 		index := t.indexChild(parent.Children, v)
@@ -207,13 +190,11 @@ func (t *TextTemplate) addNode(tags []string) {
 		if index != -1 {
 			parent = parent.Children[index]
 			continue
-		} else {
-			tmp := &node{
-				Value: v,
-			}
-			parent.Children = append(parent.Children, tmp)
-			parent = tmp
 		}
+
+		tmp := &node{Value: v}
+		parent.Children = append(parent.Children, tmp)
+		parent = tmp
 	}
 }
 
@@ -222,20 +203,20 @@ func (t *TextTemplate) validateTree(root *node) error {
 		return nil
 	}
 
+	if len(root.Children) == 1 {
+		return t.validateTree(root.Children[0])
+	}
+
 	if index := t.indexChild(root.Children, WidecardTag); index != -1 {
-		if len(root.Children) != 1 {
-			return fmt.Errorf("{} wildcard and other tags exist at the same level")
-		}
+		return fmt.Errorf("{} wildcard and other tags exist at the same level")
 	}
 
 	if index := t.indexChild(root.Children, GJSONTag); index != -1 {
-		if len(root.Children) != 1 {
-			return fmt.Errorf("{gjson} GJSON and other tags exist at the same level")
-		}
+		return fmt.Errorf("{gjson} GJSON and other tags exist at the same level")
 	}
 
-	for i := 0; i < len(root.Children); i++ {
-		if err := t.validateTree(root.Children[i]); err != nil {
+	for _, child := range root.Children {
+		if err := t.validateTree(child); err != nil {
 			return err
 		}
 	}
@@ -243,35 +224,25 @@ func (t *TextTemplate) validateTree(root *node) error {
 	return nil
 }
 
-//
 func (t *TextTemplate) buildTemplateTree() error {
-	if len(t.metaTemplates) == 0 {
-		return fmt.Errorf("empty templates")
-	}
+	t.root = &node{}
 
 	for _, v := range t.metaTemplates {
-		arr := strings.Split(v, t.separator)
-		if len(arr) == 0 {
-			return fmt.Errorf("invalid template %s by separator %s",
-				v, t.separator)
-		}
+		tags := strings.Split(v, t.separator)
 
-		for i, tag := range arr {
+		for i, tag := range tags {
 			if len(tag) == 0 {
-				return fmt.Errorf("invalid empty tag, template %s index %d seprator %s",
-					v, i, t.separator)
+				format := "invalid empty tag, template %s index %d seprator %s"
+				return fmt.Errorf(format, v, i, t.separator)
 			}
 
-			if tag == GJSONTag && i != len(arr)-1 {
-				return fmt.Errorf("invalid %s: GJSON tag should only appear at the ending if need",
-					v)
+			if tag == GJSONTag && i != len(tags)-1 {
+				format := "invalid %s: GJSON tag should only appear at the end"
+				return fmt.Errorf(format, v)
 			}
 		}
-	}
-	// every single template is valid
-	for _, v := range t.metaTemplates {
-		arr := strings.Split(v, t.separator)
-		t.addNode(arr)
+
+		t.addNode(tags)
 	}
 
 	// validate the whole template tree
@@ -279,6 +250,7 @@ func (t *TextTemplate) buildTemplateTree() error {
 		t.root = nil
 		return fmt.Errorf("invalid templates %v, err is %v ", t.metaTemplates, err)
 	}
+
 	return nil
 }
 
@@ -289,7 +261,7 @@ func (t *TextTemplate) buildTemplateTree() error {
 //   e.g. template is "filter.abc.req.body" match "filter.{}.req.body"
 //   	will return "filter.abc.req.body"
 // if not any template matched found, then return ""
-func (t TextTemplate) MatchMetaTemplate(template string) string {
+func (t *TextTemplate) MatchMetaTemplate(template string) string {
 	tags := strings.Split(template, t.separator)
 	if len(tags) == 0 {
 		return ""
@@ -334,66 +306,59 @@ func (t TextTemplate) MatchMetaTemplate(template string) string {
 	return template
 }
 
-func (t TextTemplate) extractVarsAroundToken(input string) []string {
-	arr := []string{}
+func (t *TextTemplate) extractVarsAroundToken(input string, varFunc func(v string) bool) {
 	for len(input) != 0 {
-		bIdx := strings.Index(input, t.beginToken)
-		if bIdx == -1 {
+		idx := strings.Index(input, t.beginToken)
+		if idx == -1 {
 			break
 		}
 
-		input = input[bIdx+len(t.beginToken):] // jump over the beginning token
-		eIdx := strings.Index(input, t.endToken)
+		input = input[idx+len(t.beginToken):] // jump over the beginning token
 
-		if eIdx == -1 {
+		idx = strings.Index(input, t.endToken)
+		if idx == -1 {
 			break
 		}
 
-		arr = append(arr, input[:eIdx])
-		input = input[eIdx:]
+		if !varFunc(input[:idx]) {
+			break
+		}
+
+		input = input[idx+len(t.endToken):]
 	}
-
-	return arr
 }
 
 // ExtractTemplateRuleMap extracts candidate templates from input string
 // return map's key is the candidate template, the value is the matched template
-func (t TextTemplate) ExtractTemplateRuleMap(input string) map[string]string {
-	results := t.extractVarsAroundToken(input)
+func (t *TextTemplate) ExtractTemplateRuleMap(input string) map[string]string {
 	m := map[string]string{}
 
-	for _, v := range results {
+	t.extractVarsAroundToken(input, func(v string) bool {
 		metaTemplate := t.MatchMetaTemplate(v)
-
 		if len(metaTemplate) != 0 {
 			m[v] = metaTemplate
 		}
-	}
+		return true
+	})
 
 	return m
 }
 
 // ExtractRawTemplateRuleMap extracts all candidate templates (valid/invalid)
 // from input string
-func (t TextTemplate) ExtractRawTemplateRuleMap(input string) map[string]string {
-	results := t.extractVarsAroundToken(input)
+func (t *TextTemplate) ExtractRawTemplateRuleMap(input string) map[string]string {
 	m := map[string]string{}
 
-	for _, v := range results {
-		metaTemplate := t.MatchMetaTemplate(v)
-
-		if len(metaTemplate) != 0 {
-			m[v] = metaTemplate
-		} else {
-			m[v] = ""
-		}
-	}
+	t.extractVarsAroundToken(input, func(v string) bool {
+		m[v] = t.MatchMetaTemplate(v)
+		return true
+	})
 
 	return m
 }
 
 // SetDict adds a templateRule into dictionary if it contains any templates.
-func (t TextTemplate) SetDict(template string, value interface{}) error {
+func (t *TextTemplate) SetDict(template string, value interface{}) error {
 	if tmp := t.MatchMetaTemplate(template); len(tmp) != 0 {
 		t.dict[template] = value
 		return nil
@@ -418,8 +383,13 @@ func (t *TextTemplate) setWithGJSON(template, metaTemplate string) error {
 }
 
 // HasTemplates check a string contain any valid templates
-func (t TextTemplate) HasTemplates(input string) bool {
-	return len(t.ExtractTemplateRuleMap(input)) != 0
+func (t *TextTemplate) HasTemplates(input string) bool {
+	has := false
+	t.extractVarsAroundToken(input, func(v string) bool {
+		has = t.MatchMetaTemplate(v) != ""
+		return !has
+	})
+	return has
 }
 
 // Render uses a fasttemplate and dictionary to rendering
@@ -427,25 +397,40 @@ func (t TextTemplate) HasTemplates(input string) bool {
 // "aaa-[[xxx.xx.dd.xx]]-bbb 10101-[[yyy.wwww.zzz]]-9292" will be rendered to "aaa-value0-bbb 10101-value1-9292"
 // if containers any new GJSON syntax, it will use 'gjson.Get' to extract result then store into dictionary before
 // rendering
-func (t TextTemplate) Render(input string) (string, error) {
-	templateMap := t.ExtractTemplateRuleMap(input)
+func (t *TextTemplate) Render(input string) (string, error) {
+	var (
+		err    error
+		hasVar bool
+	)
 
-	// find no template to render
-	if len(templateMap) == 0 {
+	t.extractVarsAroundToken(input, func(v string) bool {
+		meta := t.MatchMetaTemplate(v)
+		if len(meta) == 0 {
+			return true
+		}
+
+		hasVar = true
+		if !strings.Contains(meta, GJSONTag) {
+			return true
+		}
+
+		// has new gjson syntax, add manually
+		if _, exist := t.dict[v]; !exist {
+			if err = t.setWithGJSON(v, meta); err != nil {
+				return false
+			}
+		}
+
+		return true
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if !hasVar {
 		return input, nil
 	}
 
-	for k, v := range templateMap {
-		// has new gjson syntax, add manually
-		if strings.Contains(v, GJSONTag) {
-			if _, exist := t.dict[k]; !exist {
-				if err := t.setWithGJSON(k, v); err != nil {
-					return "", err
-				}
-			}
-		}
-	}
-
-	t.ft = fasttemplate.New(input, t.beginToken, t.endToken)
-	return t.ft.ExecuteString(t.dict), nil
+	return fasttemplate.ExecuteString(input, t.beginToken, t.endToken, t.dict), nil
 }
