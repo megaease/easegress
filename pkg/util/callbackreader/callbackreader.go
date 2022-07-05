@@ -89,6 +89,10 @@ func (cr *CallbackReader) Close() error {
 	return nil
 }
 
+func (cr *CallbackReader) GetReader() io.Reader {
+	return cr.reader
+}
+
 // SetReader replace previous reader with new reader. If closePreviousReader set to true, it will close
 // previous reader.
 func (cr *CallbackReader) SetReader(reader io.Reader, closePreviousReader bool) {

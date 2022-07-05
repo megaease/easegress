@@ -20,6 +20,8 @@ package proxy
 import (
 	"bytes"
 	"io"
+
+	"github.com/megaease/easegress/pkg/util/callbackreader"
 )
 
 type (
@@ -38,9 +40,15 @@ type (
 )
 
 func newPrimarySecondaryReader(r io.Reader) (io.ReadCloser, io.Reader) {
+	var realReader io.Reader
+	if cbReader, ok := r.(*callbackreader.CallbackReader); ok {
+		realReader = cbReader.GetReader()
+	} else {
+		realReader = r
+	}
 	buffChan := make(chan []byte, 10)
 	mr := &primaryReader{
-		r:        r,
+		r:        realReader,
 		buffChan: buffChan,
 		sawEOF:   false,
 	}
