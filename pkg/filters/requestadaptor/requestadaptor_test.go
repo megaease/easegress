@@ -79,37 +79,43 @@ func TestRequestAdaptor(t *testing.T) {
 	}
 
 	{
-		// panic when invalid compress type
+		// invalid compress type
 		spec := defaultFilterSpec(&Spec{Compress: "zip"})
-		ra := kind.CreateInstance(spec)
-		assert.Panics(func() { ra.Init() })
+		assert.Nil(spec)
 	}
 
 	{
-		// panic when invalid decompress type
+		// invalid decompress type
 		spec := defaultFilterSpec(&Spec{Decompress: "zip"})
-		ra := kind.CreateInstance(spec)
-		assert.Panics(func() { ra.Init() })
+		assert.Nil(spec)
 	}
 
 	{
-		// panic when set both set compress and decompress
+		// compress and decompress are set together
 		spec := defaultFilterSpec(&Spec{
 			Decompress: "gzip",
 			Compress:   "gzip",
 		})
-		ra := kind.CreateInstance(spec)
-		assert.Panics(func() { ra.Init() })
+		assert.Nil(spec)
 	}
 
 	{
-		// panic when set body and Decompress
+		// set body and Decompress
 		spec := defaultFilterSpec(&Spec{
 			Decompress: "gzip",
 			Body:       "body",
 		})
-		ra := kind.CreateInstance(spec)
-		assert.Panics(func() { ra.Init() })
+		assert.Nil(spec)
+	}
+
+	{
+		// unknown predefined signer config
+		spec := defaultFilterSpec(&Spec{
+			Sign: &SignerSpec{
+				For: "aws3",
+			},
+		})
+		assert.Nil(spec)
 	}
 }
 
@@ -268,6 +274,7 @@ func TestHandle(t *testing.T) {
 		Path: &pathadaptor.Spec{
 			Replace: "/path",
 		},
+		Sign: &SignerSpec{For: "aws4"},
 	})
 	ra := kind.CreateInstance(spec)
 	ra.Init()
@@ -301,4 +308,6 @@ func TestHandle(t *testing.T) {
 
 	path := httpreq.Path()
 	assert.Equal("/path", path)
+
+	assert.Contains(req.Header.Get("Authorization"), " SignedHeaders=host;x-add;x-amz-date;x-set,")
 }

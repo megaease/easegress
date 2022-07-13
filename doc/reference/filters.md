@@ -77,6 +77,7 @@
     - [kafka.Topic](#kafkatopic)
     - [headertojson.HeaderMap](#headertojsonheadermap)
     - [headerlookup.HeaderSetterSpec](#headerlookupheadersetterspec)
+    - [requestadaptor.SignerSpec](#requestadaptorsignerspec)
     - [Template Of RequestBuilder & ResponseBuilder](#template-of-requestbuilder--responsebuilder)
       - [HTTP Specific](#http-specific)
 
@@ -334,6 +335,18 @@ path:
     replace: "/$2/$1" # changes the order of groups
 ```
 
+The example configuration below signs the request using the
+[Amazon Signature V4](https://docs.aws.amazon.com/general/latest/gr/sigv4_signing.html)
+signing process, with the default configuration of this signing process.
+
+```yaml
+kind: RequestAdaptor
+name: request-adaptor-example
+path:
+  signer:
+    for: "aws4"
+```
+
 ### Configuration
 
 | Name       | Type                                         | Description                                                                                                                                                                                                         | Required |
@@ -345,6 +358,7 @@ path:
 | host       | string                                       | If provided the host of the original request is replaced by the value of this option. | No       |
 | decompress | string                                       | If provided, the request body is replaced by the value of decompressed body. Now support "gzip" decompress                                                                                                          | No       |
 | compress   | string                                       | If provided, the request body is replaced by the value of compressed body. Now support "gzip" compress                                                                                                              | No       |
+| sign   | [requestadaptor.SignerSpec](#requestadaptorsignerspec) | If provided, sign the request using the [Amazon Signature V4](https://docs.aws.amazon.com/general/latest/gr/sigv4_signing.html) signing process with the configuration | No       |
 
 ### Results
 
@@ -352,6 +366,7 @@ path:
 | -------------- | ---------------------------------------- |
 | decompressFail | the request body can not be decompressed |
 | compressFail   | the request body can not be compressed   |
+| signFail       | the request body can not be signed   |
 
 ## RequestBuilder
 
@@ -1025,16 +1040,16 @@ The relationship between `methods` and `url` is `AND`.
 
 | Name             | Type   | Description                                                                                                                                        | Required |
 | ---------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| scopeSuffix      | string | The last part to build credential scope, default is `megaease_request`, in `Amazon Signature V4`, it is `aws4_request`                             | No       |
-| algorithmName    | string | The query name of the signature algorithm in the request, default is `X-Me-Algorithm`,  in `Amazon Signature V4`, it is `X-Amz-Algorithm`          | No       |
-| algorithmValue   | string | The header/query value of the signature algorithm for the request, default is "ME-HMAC-SHA256", in `Amazon Signature V4`, it is `AWS4-HMAC-SHA256` | No       |
-| signedHeaders    | string | The header/query headers of the signed headers, default is `X-Me-SignedHeaders`, in `Amazon Signature V4`, it is `X-Amz-SignedHeaders`             | No       |
-| signature        | string | The query name of the signature, default is `X-Me-Signature`, in `Amazon Signature V4`, it is `X-Amz-Signature`                                    | No       |
-| date             | string | The header/query name of the request time, default is `X-Me-Date`, in `Amazon Signature V4`, it is `X-Amz-Date`                                    | No       |
-| expires          | string | The query name of expire duration, default is `X-Me-Expires`, in `Amazon Signature V4`, it is `X-Amz-Date`                                         | No       |
-| credential       | string | The query name of credential, default is `X-Me-Credential`, in `Amazon Signature V4`, it is `X-Amz-Credential`                                     | No       |
-| contentSha256    | string | The header name of body/payload hash, default is "X-Me-Content-Sha256", in `Amazon Signature V4`, it is `X-Amz-Content-Sha256`                     | No       |
-| signingKeyPrefix | string | The prefix is prepended to access key secret when deriving the signing key, default is `ME`, in `Amazon Signature V4`, it is `AWS4`                | No       |
+| scopeSuffix      | string | The last part to build credential scope, default is `request`, in `Amazon Signature V4`, it is `aws4_request`                             | No       |
+| algorithmName    | string | The query name of the signature algorithm in the request, default is `X-Algorithm`,  in `Amazon Signature V4`, it is `X-Amz-Algorithm`          | No       |
+| algorithmValue   | string | The header/query value of the signature algorithm for the request, default is "HMAC-SHA256", in `Amazon Signature V4`, it is `AWS4-HMAC-SHA256` | No       |
+| signedHeaders    | string | The header/query headers of the signed headers, default is `X-SignedHeaders`, in `Amazon Signature V4`, it is `X-Amz-SignedHeaders`             | No       |
+| signature        | string | The query name of the signature, default is `X-Signature`, in `Amazon Signature V4`, it is `X-Amz-Signature`                                    | No       |
+| date             | string | The header/query name of the request time, default is `X-Date`, in `Amazon Signature V4`, it is `X-Amz-Date`                                    | No       |
+| expires          | string | The query name of expire duration, default is `X-Expires`, in `Amazon Signature V4`, it is `X-Amz-Date`                                         | No       |
+| credential       | string | The query name of credential, default is `X-Credential`, in `Amazon Signature V4`, it is `X-Amz-Credential`                                     | No       |
+| contentSha256    | string | The header name of body/payload hash, default is `X-Content-Sha256`, in `Amazon Signature V4`, it is `X-Amz-Content-Sha256`                     | No       |
+| signingKeyPrefix | string | The prefix is prepended to access key secret when deriving the signing key, default is an empty string, in `Amazon Signature V4`, it is `AWS4`                | No       |
 
 ### validator.OAuth2ValidatorSpec
 
@@ -1080,6 +1095,16 @@ The relationship between `methods` and `url` is `AND`.
 |------|------|-------------|----------|
 | etcdKey | string | Key used to get data | No | 
 | headerKey | string | Key used to set data into http header | No | 
+
+### requestadaptor.SignerSpec
+
+This type is derived from  [signer.Spec](#signerspec), with the following
+two more fields.
+
+| Name | Type | Description | Required | 
+|------|------|-------------|----------|
+| for | string | The name of a predefined [Literal](#signerliteral) and [HeaderHoisting](#signerheaderhoisting) configuration, only `aws4` is supported at present. | No | 
+| scopes | []string | Scopes of the input request | No | 
 
 ### Template Of RequestBuilder & ResponseBuilder
 
