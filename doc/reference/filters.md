@@ -1156,6 +1156,15 @@ result YAML varies from protocol.
   | url | string | URL of the result request, default is `/`. | No | 
   | headers | map[string][]string | Headers of the result request. | No | 
   | body | string | Body of the result request. | No | 
+  | formData | map[string]field | Body of the result request, in form data pattern. | No | 
+
+  Please note `body` takes higher priority than `formData`, and the schema of
+  `field` in `formData` is:
+
+  | Name     | Type   | Description         | Required | 
+  |----------|--------|---------------------|----------|
+  | value    | string | value of the field. | No       |
+  | fileName | string | the file name, if value is the content of a file. | No |
 
 * **Schema of result response**
 
