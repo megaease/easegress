@@ -31,7 +31,7 @@ import (
 type (
 	// GlobalFlags is the global flags for the whole client.
 	GlobalFlags struct {
-		Server       string
+		URL          string
 		OutputFormat string
 	}
 
@@ -116,7 +116,7 @@ const (
 )
 
 func makeURL(urlTemplate string, a ...interface{}) string {
-	return "http://" + CommandlineGlobalFlags.Server + fmt.Sprintf(urlTemplate, a...)
+	return CommandlineGlobalFlags.URL + fmt.Sprintf(urlTemplate, a...)
 }
 
 func successfulStatusCode(code int) bool {

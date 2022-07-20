@@ -116,8 +116,8 @@ func main() {
 		completionCmd,
 	)
 
-	rootCmd.PersistentFlags().StringVar(&command.CommandlineGlobalFlags.Server,
-		"server", "localhost:2381", "The address of the Easegress endpoint")
+	rootCmd.PersistentFlags().StringVar(&command.CommandlineGlobalFlags.URL,
+		"url", "https://localhost:2381", "The address of the Easegress endpoint")
 	rootCmd.PersistentFlags().StringVarP(&command.CommandlineGlobalFlags.OutputFormat,
 		"output", "o", "yaml", "Output format(json, yaml)")
 
