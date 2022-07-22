@@ -114,7 +114,7 @@ func (s *Spec) ValidateJumpIf(specs map[string]filters.Spec) {
 		}
 		results := filters.GetKind(spec.Kind()).Results
 		for result, target := range node.JumpIf {
-			if !stringtool.StrInSlice(result, results) {
+			if result != "" && !stringtool.StrInSlice(result, results) {
 				msgFmt := "filter %s: result %s is not in %v"
 				panic(fmt.Errorf(msgFmt, node.FilterName, result, results))
 			}
@@ -378,13 +378,12 @@ func (p *Pipeline) doHandle(ctx *context.Context, flow []FlowNode, stats []Filte
 			Result:   result,
 		})
 
-		if result == "" {
-			next = ""
-			continue
+		var ok bool
+		if next, ok = node.JumpIf[result]; result != "" && !ok {
+			next = BuiltInFilterEnd
 		}
 
-		next = node.JumpIf[result]
-		if next == "" || next == BuiltInFilterEnd {
+		if next == BuiltInFilterEnd {
 			sawEnd = true
 			break
 		}

@@ -127,15 +127,20 @@ filters:
     - url: http://127.0.0.1:9095   
 ```
 
-The `flow` defines the execution order of filters. You can use `jumpIf` to change the order of execution if one filter returns unexpected `result`. For example: 
+The `flow` defines the execution order of filters. You can use `jumpIf` to
+change the order.
+
+For example, if a request’s header doesn’t have the key `X-Id` or its value
+is not `user1` or `user2`, then the `validator` filter returns result `invalid`
+and the pipeline jumps to `END`.
 
 ```yaml 
 name: http-pipeline-example2
 kind: Pipeline
-# END is built in filter name, it stops execution of pipeline and returns. 
 flow:
 - filter: validator
   jumpIf: 
+    # END is a built-in filter, it stops the execution of the pipeline.
     invalid: END
 - filter: proxy 
 
@@ -151,8 +156,6 @@ filters:
   - servers:
     - url: http://127.0.0.1:9095 
 ```
-In this case, if a request’s header doesn’t have the key `X-Id` or its value is not `user1` or `user2`, then the `validator` filter returns an `invalid` result and the pipeline jumps to `END`, the `proxy` filter does not execute. 
-
 
 > `jumpIf` can only jump to filters behind the current filter.
 
@@ -552,7 +555,7 @@ There must be at least one of `values` and `regexp`.
 | Name   | Type              | Description                                                                                                                                                                         | Required |
 | ------ | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | filter | string            | The filter name                                                                                                                                                                     | Yes      |
-| jumpIf | map[string]string | Jump to another filter conditionally, the key is the result of the current filter, the value is the jumping filter name. `END` is the built-in value for the ending of the pipeline | No       |
+| jumpIf | map[string]string | Jump to another filter conditionally, the key is the result of the current filter, the value is the target filter name/alias. `END` is the built-in value for the ending of the pipeline | No       |
 | namespace | string | Namespace of the filter | No | 
 | alias | string | Alias name of the filter | No | 
 

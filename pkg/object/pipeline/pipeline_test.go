@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/megaease/easegress/pkg/context"
@@ -31,7 +30,6 @@ import (
 	"github.com/megaease/easegress/pkg/supervisor"
 	"github.com/megaease/easegress/pkg/tracing"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v3"
 )
 
 func init() {
@@ -100,97 +98,95 @@ func cleanup() {
 }
 
 func TestSpecValidate(t *testing.T) {
-	cleanup()
-	t.Run("spec missing flow", func(t *testing.T) {
+	t.Run("spec missing filter definition", func(t *testing.T) {
+		cleanup()
 		filters.Register(MockFilterKind("mock-filter", nil))
-		spec := map[string]interface{}{
-			"name": "pipeline",
-			"kind": "Pipeline",
-			"flow": []FlowNode{
-				{FilterName: "filter-1"}, // no such a filter defined
-			},
-			"filters": []map[string]interface{}{
-				{
-					"name": "filter-2",
-					"kind": "mock-filter",
-				},
-			},
-		}
-		superSpecYaml, err := yaml.Marshal(spec)
-		assert.Nil(t, err)
-		_, err = supervisor.NewSpec(string(superSpecYaml))
+
+		spec := `name: pipeline
+kind: Pipeline
+flow:
+- filter: filter-1
+filters:
+- filter: filter-2
+  kind: mock-filter`
+		_, err := supervisor.NewSpec(spec)
 		assert.NotNil(t, err, "filter-1 not found")
 	})
-	cleanup()
-	t.Run("ordered filters with flow", func(t *testing.T) {
-		filters.Register(MockFilterKind("mock-filter", nil))
-		spec := map[string]interface{}{
-			"name": "pipeline",
-			"kind": "Pipeline",
-			"flow": []FlowNode{
-				{FilterName: "filter-1"}, {FilterName: "filter-2"},
-			},
-			"filters": []map[string]interface{}{
-				{
-					"name": "filter-2",
-					"kind": "mock-filter",
-					// Reference to filter-1 before it's defined.
-					// Flow defines the order filters are evaluated, so filter-1 will be available for filter-2.
-					"mock-field": "[[filter.filter-1.rsp.body]]",
-				},
-				{
-					"name": "filter-1",
-					"kind": "mock-filter",
-				},
-			},
-		}
-		superSpecYaml, err := yaml.Marshal(spec)
-		assert.Nil(t, err)
-		_, err = supervisor.NewSpec(string(superSpecYaml))
+
+	t.Run("valid jumpIf", func(t *testing.T) {
+		cleanup()
+		filters.Register(MockFilterKind("mock-filter", []string{"invalid"}))
+
+		spec := `name: pipeline
+kind: Pipeline
+flow:
+- filter: filter-1
+  jumpIf:
+    invalid: filter-2
+- filter: filter-2
+- filter: END
+filters:
+- name: filter-2
+  kind: mock-filter
+- name: filter-1
+  kind: mock-filter`
+
+		_, err := supervisor.NewSpec(spec)
 		assert.Nil(t, err, "valid spec")
 	})
-	cleanup()
-	t.Run("ordered filters without flow", func(t *testing.T) {
-		filters.Register(MockFilterKind("mock-filter", nil))
-		spec := map[string]interface{}{
-			"name": "pipeline",
-			"kind": "Pipeline",
-			"filters": []map[string]interface{}{
-				{
-					"name": "filter-2",
-					"kind": "mock-filter",
-					// Reference to filter-1 before it's defined.
-					// There is no Flow so filters are evaluated in the same order as listed here -> this will fail
-					"mock-field": "[[filter.filter-1.rsp.body]]",
-				},
-				{
-					"name": "filter-1",
-					"kind": "mock-filter",
-				},
-			},
-		}
-		superSpecYaml, err := yaml.Marshal(spec)
-		assert.Nil(t, err)
-		_, err = supervisor.NewSpec(string(superSpecYaml))
-		assert.Nil(t, err, "valid spec")
-	})
-	cleanup()
-	t.Run("duplicate filter", func(t *testing.T) {
-		filters.Register(MockFilterKind("mock-filter", nil))
-		spec := map[string]interface{}{
-			"name": "pipeline",
-			"kind": "Pipeline",
-			"filters": []map[string]interface{}{
-				{"name": "filter-1", "kind": "mock-filter"},
-				{"name": "filter-1", "kind": "mock-filter"},
-			},
-		}
-		superSpecYaml, err := yaml.Marshal(spec)
-		assert.Nil(t, err)
-		_, err = supervisor.NewSpec(string(superSpecYaml))
+
+	t.Run("invalid jumpIf", func(t *testing.T) {
+		cleanup()
+		filters.Register(MockFilterKind("mock-filter", []string{"invalid"}))
+
+		spec := `name: pipeline
+kind: Pipeline
+flow:
+- filter: filter-1
+  jumpIf:
+    invalid: filter-3
+- filter: filter-2
+filters:
+- name: filter-2
+  kind: mock-filter
+- name: filter-1
+  kind: mock-filter`
+
+		_, err := supervisor.NewSpec(spec)
 		assert.NotNil(t, err, "invalid spec")
 	})
-	cleanup()
+
+	t.Run("ordered filters without flow", func(t *testing.T) {
+		cleanup()
+		filters.Register(MockFilterKind("mock-filter", nil))
+
+		spec := `name: pipeline
+kind: Pipeline
+filters:
+- name: filter-2
+  kind: mock-filter
+- name: filter-1
+  kind: mock-filter`
+
+		_, err := supervisor.NewSpec(spec)
+		assert.Nil(t, err, "valid spec")
+	})
+
+	t.Run("duplicate filter", func(t *testing.T) {
+		cleanup()
+		filters.Register(MockFilterKind("mock-filter", nil))
+
+		spec := `name: pipeline
+kind: Pipeline
+filters:
+- name: filter-1
+  kind: mock-filter
+- name: filter-1
+  kind: mock-filter`
+
+		_, err := supervisor.NewSpec(spec)
+		assert.NotNil(t, err, "invalid spec")
+	})
 }
 
 func TestRegistry(t *testing.T) {
@@ -360,11 +356,18 @@ kind: Pipeline
 flow:
   - filter: filter1
   - filter: filter2 
+    jumpIf:
+      "": END
+  - filter: filter3
 filters:
   - name: filter1 
     kind: Filter1 
   - name: filter2
     kind: Filter2 
+  - name: filter3
+    kind: Filter2 
+data:
+  foo: bar
 `
 	filters.Register(MockFilterKind("Filter1", nil))
 	filters.Register(MockFilterKind("Filter2", nil))
@@ -392,14 +395,21 @@ filters:
 	k2, v2 := filter2.HeaderKV()
 	assert.Equal(v1, stdReq.Header.Get(k1))
 	assert.Equal(v2, stdReq.Header.Get(k2))
-	fmt.Printf("tags %+v\n", ctx.Tags())
 
-	assert.True(strings.Contains(ctx.Tags(), "filter1"), "current: filter1->filter2")
-	assert.True(strings.Contains(ctx.Tags(), "filter2"))
+	tags := ctx.Tags()
+	assert.Contains(tags, "filter1")
+	assert.Contains(tags, "filter2")
+	assert.NotContains(tags, "filter3")
 
 	status := pipeline.Status().ObjectStatus.(*Status)
-	assert.Equal(2, len(status.Filters))
+	assert.Equal(3, len(status.Filters))
 	assert.Empty(status.ToMetrics("123"), "no metrics")
+
+	var value string
+	assert.NotPanics(func() {
+		value = ctx.GetData("PIPELINE").(map[string]interface{})["foo"].(string)
+	})
+	assert.Equal("bar", value)
 }
 
 func TestHandleWithBeforeAfter(t *testing.T) {
