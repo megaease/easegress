@@ -152,7 +152,11 @@ func (v *Validator) Handle(ctx *context.Context) string {
 		}
 	}
 	if v.signer != nil {
-		if err := v.signer.Verify(req.Std()); err != nil {
+		vCtx := v.signer.NewVerificationContext()
+		if req.IsStream() {
+			vCtx.ExcludeBody(true)
+		}
+		if err := vCtx.Verify(req.Std(), req.GetPayload); err != nil {
 			prepareErrorResponse(http.StatusUnauthorized, "signature validator: ", err)
 			return resultInvalid
 		}

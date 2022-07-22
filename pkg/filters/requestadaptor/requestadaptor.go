@@ -18,7 +18,9 @@
 package requestadaptor
 
 import (
+	"fmt"
 	"io"
+	"time"
 
 	"github.com/megaease/easegress/pkg/context"
 	"github.com/megaease/easegress/pkg/filters"
@@ -27,6 +29,7 @@ import (
 	"github.com/megaease/easegress/pkg/protocols/httpprot/httpheader"
 	"github.com/megaease/easegress/pkg/util/pathadaptor"
 	"github.com/megaease/easegress/pkg/util/readers"
+	"github.com/megaease/easegress/pkg/util/signer"
 	"github.com/megaease/easegress/pkg/util/stringtool"
 )
 
@@ -36,6 +39,7 @@ const (
 
 	resultDecompressFailed = "decompressFailed"
 	resultCompressFailed   = "compressFailed"
+	resultSignFailed       = "signFailed"
 )
 
 var kind = &filters.Kind{
@@ -53,6 +57,69 @@ var kind = &filters.Kind{
 	},
 }
 
+var signerConfigs = map[string]signerConfig{
+	"aws4": {
+		literal: &signer.Literal{
+			ScopeSuffix:      "aws4_request",
+			AlgorithmName:    "X-Amz-Algorithm",
+			AlgorithmValue:   "AWS4-HMAC-SHA256",
+			SignedHeaders:    "X-Amz-SignedHeaders",
+			Signature:        "X-Amz-Signature",
+			Date:             "X-Amz-Date",
+			Expires:          "X-Amz-Expires",
+			Credential:       "X-Amz-Credential",
+			ContentSHA256:    "X-Amz-Content-Sha256",
+			SigningKeyPrefix: "AWS4",
+		},
+
+		headerHoisting: &signer.HeaderHoisting{
+			AllowedPrefix:    []string{"X-Amz-"},
+			DisallowedPrefix: []string{"X-Amz-Meta-"},
+			Disallowed: []string{
+				"Cache-Control",
+				"Content-Disposition",
+				"Content-Encoding",
+				"Content-Language",
+				"Content-Md5",
+				"Content-Type",
+				"Expires",
+				"If-Match",
+				"If-Modified-Since",
+				"If-None-Match",
+				"If-Unmodified-Since",
+				"Range",
+				"X-Amz-Acl",
+				"X-Amz-Copy-Source",
+				"X-Amz-Copy-Source-If-Match",
+				"X-Amz-Copy-Source-If-Modified-Since",
+				"X-Amz-Copy-Source-If-None-Match",
+				"X-Amz-Copy-Source-If-Unmodified-Since",
+				"X-Amz-Copy-Source-Range",
+				"X-Amz-Copy-Source-Server-Side-Encryption-Customer-Algorithm",
+				"X-Amz-Copy-Source-Server-Side-Encryption-Customer-Key",
+				"X-Amz-Copy-Source-Server-Side-Encryption-Customer-Key-Md5",
+				"X-Amz-Grant-Full-control",
+				"X-Amz-Grant-Read",
+				"X-Amz-Grant-Read-Acp",
+				"X-Amz-Grant-Write",
+				"X-Amz-Grant-Write-Acp",
+				"X-Amz-Metadata-Directive",
+				"X-Amz-Mfa",
+				"X-Amz-Request-Payer",
+				"X-Amz-Server-Side-Encryption",
+				"X-Amz-Server-Side-Encryption-Aws-Kms-Key-Id",
+				"X-Amz-Server-Side-Encryption-Customer-Algorithm",
+				"X-Amz-Server-Side-Encryption-Customer-Key",
+				"X-Amz-Server-Side-Encryption-Customer-Key-Md5",
+				"X-Amz-Storage-Class",
+				"X-Amz-Tagging",
+				"X-Amz-Website-Redirect-Location",
+				"X-Amz-Content-Sha256",
+			},
+		},
+	},
+}
+
 func init() {
 	filters.Register(kind)
 }
@@ -62,7 +129,8 @@ type (
 	RequestAdaptor struct {
 		spec *Spec
 
-		pa *pathadaptor.PathAdaptor
+		pa     *pathadaptor.PathAdaptor
+		signer *signer.Signer
 	}
 
 	// Spec is HTTPAdaptor Spec.
@@ -76,8 +144,48 @@ type (
 		Body       string                `yaml:"body" jsonschema:"omitempty"`
 		Compress   string                `yaml:"compress" jsonschema:"omitempty"`
 		Decompress string                `yaml:"decompress" jsonschema:"omitempty"`
+		Sign       *SignerSpec           `yaml:"sign,omitempty" jsonschema:"omitempty"`
+	}
+
+	// SignerSpec is the spec of the request signer.
+	SignerSpec struct {
+		signer.Spec `yaml:",inline"`
+		For         string   `yaml:"for" jsonschema:"omitempty,enum=,enum=aws4"`
+		Scopes      []string `yaml:"scopes" jsonschema:"omitempty"`
+	}
+
+	signerConfig struct {
+		literal        *signer.Literal
+		headerHoisting *signer.HeaderHoisting
 	}
 )
+
+// Validate verifies that at least one of the validations is defined.
+func (spec *Spec) Validate() error {
+	if spec.Decompress != "" && spec.Decompress != "gzip" {
+		return fmt.Errorf("RequestAdaptor only support decompress type of gzip")
+	}
+	if spec.Compress != "" && spec.Compress != "gzip" {
+		return fmt.Errorf("RequestAdaptor only support decompress type of gzip")
+	}
+	if spec.Compress != "" && spec.Decompress != "" {
+		return fmt.Errorf("RequestAdaptor can only do compress or decompress for given request body, not both")
+	}
+	if spec.Body != "" && spec.Decompress != "" {
+		return fmt.Errorf("No need to decompress when body is specified in RequestAdaptor spec")
+	}
+	if spec.Sign == nil {
+		return nil
+	}
+	s := spec.Sign
+	if s.For != "" {
+		if _, ok := signerConfigs[s.For]; !ok {
+			return fmt.Errorf("%q is not a predefined signer configuration", s.For)
+		}
+	}
+
+	return nil
+}
 
 // Name returns the name of the RequestAdaptor filter instance.
 func (ra *RequestAdaptor) Name() string {
@@ -96,18 +204,6 @@ func (ra *RequestAdaptor) Spec() filters.Spec {
 
 // Init initializes RequestAdaptor.
 func (ra *RequestAdaptor) Init() {
-	if ra.spec.Decompress != "" && ra.spec.Decompress != "gzip" {
-		panic("RequestAdaptor only support decompress type of gzip")
-	}
-	if ra.spec.Compress != "" && ra.spec.Compress != "gzip" {
-		panic("RequestAdaptor only support decompress type of gzip")
-	}
-	if ra.spec.Compress != "" && ra.spec.Decompress != "" {
-		panic("RequestAdaptor can only do compress or decompress for given request body, not both")
-	}
-	if ra.spec.Body != "" && ra.spec.Decompress != "" {
-		panic("No need to decompress when body is specified in RequestAdaptor spec")
-	}
 	ra.reload()
 }
 
@@ -119,6 +215,14 @@ func (ra *RequestAdaptor) Inherit(previousGeneration filters.Filter) {
 func (ra *RequestAdaptor) reload() {
 	if ra.spec.Path != nil {
 		ra.pa = pathadaptor.New(ra.spec.Path)
+	}
+	if s := ra.spec.Sign; s != nil {
+		sc, ok := signerConfigs[s.For]
+		if ok {
+			s.Literal = sc.literal
+			s.HeaderHoisting = sc.headerHoisting
+		}
+		ra.signer = signer.CreateFromSpec(&s.Spec)
 	}
 }
 
@@ -180,6 +284,13 @@ func (ra *RequestAdaptor) Handle(ctx *context.Context) string {
 		}
 	}
 
+	if ra.signer != nil {
+		res := ra.signRequest(req)
+		if res != "" {
+			return res
+		}
+	}
+
 	return ""
 }
 
@@ -196,7 +307,7 @@ func (ra *RequestAdaptor) processCompress(req *httpprot.Request) string {
 		data, err := io.ReadAll(zr)
 		zr.Close()
 		if err != nil {
-			logger.Errorf("compress request body failed, %v", err)
+			logger.Errorf("compress request body failed: %v", err)
 			return resultCompressFailed
 		}
 		req.SetPayload(data)
@@ -223,13 +334,26 @@ func (ra *RequestAdaptor) processDecompress(req *httpprot.Request) string {
 		data, err := io.ReadAll(zr)
 		zr.Close()
 		if err != nil {
-			logger.Errorf("decompress request body failed, %v", err)
+			logger.Errorf("decompress request body failed: %v", err)
 			return resultDecompressFailed
 		}
 		req.SetPayload(data)
 	}
 
 	req.HTTPHeader().Del("Content-Encoding")
+	return ""
+}
+
+func (ra *RequestAdaptor) signRequest(req *httpprot.Request) string {
+	sCtx := ra.signer.NewSigningContext(time.Now(), ra.spec.Sign.Scopes...)
+	if req.IsStream() {
+		sCtx.ExcludeBody(true)
+	}
+	err := sCtx.Sign(req.Std(), req.GetPayload)
+	if err != nil {
+		logger.Errorf("sign request failed: %v", err)
+		return resultSignFailed
+	}
 	return ""
 }
 

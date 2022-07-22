@@ -22,6 +22,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strings"
@@ -405,10 +406,17 @@ func (r *builderRequest) YAMLBody() (interface{}, error) {
 
 // requestInfo stores the information of a request.
 type requestInfo struct {
-	Method  string              `json:"method" jsonschema:"omitempty"`
-	URL     string              `json:"url" jsonschema:"omitempty"`
-	Headers map[string][]string `yaml:"headers" jsonschema:"omitempty"`
-	Body    string              `yaml:"body" jsonschema:"omitempty"`
+	Method   string              `json:"method" jsonschema:"omitempty"`
+	URL      string              `json:"url" jsonschema:"omitempty"`
+	Headers  map[string][]string `yaml:"headers" jsonschema:"omitempty"`
+	Body     string              `yaml:"body" jsonschema:"omitempty"`
+	FormData map[string]field    `yaml:"formData" jsonschema:"omitempty"`
+}
+
+// field stores the information of a form field.
+type field struct {
+	FileName string `yaml:"fileName" jsonschema:"omitempty"`
+	Value    string `yaml:"value" jsonschema:"omitempty"`
 }
 
 // NewRequestInfo returns a new requestInfo.
@@ -448,7 +456,29 @@ func (p *Protocol) BuildRequest(reqInfo interface{}) (protocols.Request, error) 
 	}
 
 	req, _ := NewRequest(stdReq)
-	req.SetPayload([]byte(ri.Body))
+	if ri.Body != "" {
+		req.SetPayload([]byte(ri.Body))
+		return req, nil
+	}
+
+	if ri.FormData == nil {
+		return req, nil
+	}
+
+	var buf bytes.Buffer
+	form := multipart.NewWriter(&buf)
+	for name, p := range ri.FormData {
+		var f io.Writer
+		if p.FileName == "" {
+			f, _ = form.CreateFormField(name)
+		} else {
+			f, _ = form.CreateFormFile(name, p.FileName)
+		}
+		f.Write([]byte(p.Value))
+	}
+	form.Close()
+	req.HTTPHeader().Set("Content-Type", form.FormDataContentType())
+	req.SetPayload(buf.Bytes())
 
 	return req, nil
 }
