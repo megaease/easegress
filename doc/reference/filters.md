@@ -1122,6 +1122,8 @@ package, and extra functions defined by Easegress:
 * **mergeObject**: merge two or more objects into one, the type of the input
   objects must be `map[string]interface{}`, and if one of their field is
   also an object, its type must also be `map[string]interface{}`.
+* **jsonEscape**: escape a string so that it can be used as the key or value
+  in JSON text.
 
 Easegress injects existing requests/responses of the current context into
 the template engine at runtime, so we can use `.requests.<namespace>.<field>`
@@ -1129,7 +1131,11 @@ or `.responses.<namespace>.<field>` to read the information out (the
 available fields vary from the protocol of the request or response,
 and please refer [Pipeline](controllers.md#pipeline) for what is `namespace`).
 For example, if the request of the `DEFAULT` namespace is an HTTP one, we
-can access its method via `.requests.DEFAULT.Method`. .
+can access its method via `.requests.DEFAULT.Method`.
+
+Easegress also injects other data into the template engine, which can be
+accessed with `.data.<name>`, for example, we can use `.data.PIPELINE` to
+read the data defined in the pipeline spec.
 
 The `template` should generate a string in YAML format, the schema of the
 result YAML varies from protocol.

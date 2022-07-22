@@ -66,6 +66,7 @@ type (
 		Flow       []FlowNode               `yaml:"flow" jsonschema:"omitempty"`
 		Filters    []map[string]interface{} `yaml:"filters" jsonschema:"required"`
 		Resilience []map[string]interface{} `yaml:"resilience" jsonschema:"omitempty"`
+		Data       map[string]interface{}   `yaml:"data" jsonschema:"omitempty"`
 	}
 
 	// FlowNode describes one node of the pipeline flow.
@@ -303,6 +304,10 @@ func (p *Pipeline) getFilter(name string) filters.Filter {
 // HandleWithBeforeAfter handles the request, with additional flow defined by
 // the before/after pipeline.
 func (p *Pipeline) HandleWithBeforeAfter(ctx *context.Context, before, after *Pipeline) string {
+	if len(p.spec.Data) > 0 {
+		ctx.SetData("PIPELINE", p.spec.Data)
+	}
+
 	result, sawEnd := "", false
 	flowLen := len(p.flow)
 	if before != nil {
@@ -333,8 +338,13 @@ func (p *Pipeline) HandleWithBeforeAfter(ctx *context.Context, before, after *Pi
 
 // Handle is the handler to deal with the request.
 func (p *Pipeline) Handle(ctx *context.Context) string {
+	if len(p.spec.Data) > 0 {
+		ctx.SetData("PIPELINE", p.spec.Data)
+	}
+
 	stats := make([]FilterStat, 0, len(p.flow))
 	result, stats, _ := p.doHandle(ctx, p.flow, stats)
+
 	ctx.LazyAddTag(func() string {
 		return serializeStats(stats)
 	})
