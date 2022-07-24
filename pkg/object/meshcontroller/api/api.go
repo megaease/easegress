@@ -166,11 +166,6 @@ func (a *API) registerAPIs() {
 			{Path: MeshServiceInstancePath, Method: "GET", Handler: a.getServiceInstanceSpec},
 			{Path: MeshServiceInstancePath, Method: "DELETE", Handler: a.offlineServiceInstance},
 
-			{Path: OldMeshServiceCanaryPath, Method: "POST", Handler: a.createPartOfService(canaryMeta)},
-			{Path: OldMeshServiceCanaryPath, Method: "GET", Handler: a.getPartOfService(canaryMeta)},
-			{Path: OldMeshServiceCanaryPath, Method: "PUT", Handler: a.updatePartOfService(canaryMeta)},
-			{Path: OldMeshServiceCanaryPath, Method: "DELETE", Handler: a.deletePartOfService(canaryMeta)},
-
 			{Path: MeshServiceMockPath, Method: "POST", Handler: a.createPartOfService(mockMeta)},
 			{Path: MeshServiceMockPath, Method: "GET", Handler: a.getPartOfService(mockMeta)},
 			{Path: MeshServiceMockPath, Method: "PUT", Handler: a.updatePartOfService(mockMeta)},
@@ -254,12 +249,12 @@ func (a *API) convertSpecToPB(spec interface{}, pbSpec interface{}) error {
 }
 
 func (a *API) convertPBToSpec(pbSpec interface{}, spec interface{}) error {
-	buf, err := json.Marshal(pbSpec)
+	buff, err := json.Marshal(pbSpec)
 	if err != nil {
 		return fmt.Errorf("marshal %#v to json: %v", pbSpec, err)
 	}
 
-	err = json.Unmarshal(buf, spec)
+	err = json.Unmarshal(buff, spec)
 	if err != nil {
 		return fmt.Errorf("unmarshal %#v to spec: %v", spec, err)
 	}

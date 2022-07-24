@@ -22,9 +22,9 @@ import (
 	"runtime/debug"
 	"sync"
 
+	"github.com/megaease/easegress/pkg/cluster"
 	"github.com/megaease/easegress/pkg/context"
 	"github.com/megaease/easegress/pkg/logger"
-	"github.com/megaease/easegress/pkg/object/pipeline"
 	"github.com/megaease/easegress/pkg/supervisor"
 )
 
@@ -69,20 +69,35 @@ type (
 
 	// Status is the status of namespaces
 	Status struct {
-		Specs []*StatusInSameNamespace `yaml:"specs"`
+		Namespaces []*NamespacesStatus `yaml:"namespaces"`
 	}
 
-	// StatusInSameNamespace is the universal status in one space.
-	// TrafficController won't use it.
-	StatusInSameNamespace struct {
-		Namespace    string                      `yaml:"namespace"`
-		TrafficGates map[string]interface{}      `yaml:"trafficGates"`
-		Pipelines    map[string]*pipeline.Status `yaml:"pipelines"`
+	// NamespacesStatus is the universal status in one namespace.
+	NamespacesStatus struct {
+		Namespace      string           `yaml:"namespace"`
+		TrafficObjects []*TrafficObject `yaml:"trafficObjects"`
+	}
+
+	// TrafficObject is the traffic object.
+	TrafficObject struct {
+		Name                string `yaml:"name"`
+		TrafficObjectStatus `yaml:",inline"`
+	}
+
+	// TrafficObjectStatus is the status of traffic object.
+	TrafficObjectStatus struct {
+		Spec   interface{} `yaml:"spec"`
+		Status interface{} `yaml:"status"`
 	}
 )
 
 func init() {
 	supervisor.Register(&TrafficController{})
+}
+
+// TrafficNamespace returns the exported system namespace of the internal namespace of TrafficController.
+func (ns *NamespacesStatus) TrafficNamespace() string {
+	return cluster.TrafficNamespace(ns.Namespace)
 }
 
 func newNamespace(namespace string) *Namespace {
@@ -100,18 +115,6 @@ func (ns *Namespace) GetHandler(name string) (context.Handler, bool) {
 
 	handler := entity.(*supervisor.ObjectEntity).Instance().(context.Handler)
 	return handler, true
-}
-
-// ToSyncStatus returns traffic gates and pipelines in a map
-func (sisn *StatusInSameNamespace) ToSyncStatus() map[string]*supervisor.Status {
-	objects := make(map[string]*supervisor.Status)
-	for key, status := range sisn.TrafficGates {
-		objects[key] = &supervisor.Status{ObjectStatus: status}
-	}
-	for key, status := range sisn.Pipelines {
-		objects[key] = &supervisor.Status{ObjectStatus: status}
-	}
-	return objects
 }
 
 // Category returns the category of TrafficController.
@@ -628,46 +631,42 @@ func (tc *TrafficController) _cleanSpace(namespace string) {
 }
 
 // Status returns the status of TrafficController.
-// return []StatusInSameNamespace
-// StatusInSameNamespace:
-//  - Namespace: namespace
-//  - TrafficGates: map[objectName]objectStatus
-//  - Pipelines: map[objectName]objectStatus
+// It reports all traffic object spec and status.
 func (tc *TrafficController) Status() *supervisor.Status {
-	// NOTE: TrafficController won't report any namespaced statuses.
-	// Higher controllers should report their own namespaced status.
-
 	tc.mutex.Lock()
 	defer tc.mutex.Unlock()
 
-	statuses := []*StatusInSameNamespace{}
+	statuses := []*NamespacesStatus{}
 
 	for namespace, namespaceSpec := range tc.namespaces {
-		trafficGates := make(map[string]interface{})
-		namespaceSpec.trafficGates.Range(func(key, value interface{}) bool {
-			k := key.(string)
-			v := value.(*supervisor.ObjectEntity)
-			trafficGates[k] = v.Instance().Status().ObjectStatus
-			return true
-		})
+		status := &NamespacesStatus{
+			Namespace: namespace,
+		}
 
-		pipelines := make(map[string]*pipeline.Status)
-		namespaceSpec.pipelines.Range(func(key, value interface{}) bool {
+		recordStatus := func(key, value interface{}) bool {
 			k := key.(string)
 			v := value.(*supervisor.ObjectEntity)
 
-			pipelines[k] = v.Instance().Status().ObjectStatus.(*pipeline.Status)
-			return true
-		})
+			trafficObject := &TrafficObject{
+				Name: k,
+				TrafficObjectStatus: TrafficObjectStatus{
+					Spec:   v.Spec().ObjectSpec(),
+					Status: v.Instance().Status().ObjectStatus,
+				},
+			}
 
-		statuses = append(statuses, &StatusInSameNamespace{
-			Namespace:    namespace,
-			TrafficGates: trafficGates,
-			Pipelines:    pipelines,
-		})
+			status.TrafficObjects = append(status.TrafficObjects, trafficObject)
+
+			return true
+		}
+
+		namespaceSpec.trafficGates.Range(recordStatus)
+		namespaceSpec.pipelines.Range(recordStatus)
+
+		statuses = append(statuses, status)
 	}
 
-	return &supervisor.Status{ObjectStatus: &Status{Specs: statuses}}
+	return &supervisor.Status{ObjectStatus: &Status{Namespaces: statuses}}
 }
 
 // Close closes TrafficController.

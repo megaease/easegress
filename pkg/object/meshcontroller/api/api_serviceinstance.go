@@ -28,7 +28,7 @@ import (
 	"github.com/megaease/easegress/pkg/api"
 	"github.com/megaease/easegress/pkg/logger"
 	"github.com/megaease/easegress/pkg/object/meshcontroller/spec"
-	v1alpha1 "github.com/megaease/easemesh-api/v1alpha1"
+	v2alpha1 "github.com/megaease/easemesh-api/v2alpha1"
 )
 
 type serviceInstancesByOrder []*spec.ServiceInstanceSpec
@@ -58,9 +58,9 @@ func (a *API) listServiceInstanceSpecs(w http.ResponseWriter, r *http.Request) {
 
 	sort.Sort(serviceInstancesByOrder(specs))
 
-	var apiSpecs []*v1alpha1.ServiceInstance
+	var apiSpecs []*v2alpha1.ServiceInstance
 	for _, v := range specs {
-		instance := &v1alpha1.ServiceInstance{}
+		instance := &v2alpha1.ServiceInstance{}
 		err := a.convertSpecToPB(v, instance)
 		if err != nil {
 			logger.Errorf("convert spec %#v to pb spec failed: %v", v, err)
@@ -91,7 +91,7 @@ func (a *API) getServiceInstanceSpec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pbInstanceSpec := &v1alpha1.ServiceInstance{}
+	pbInstanceSpec := &v2alpha1.ServiceInstance{}
 	err = a.convertSpecToPB(instanceSpec, pbInstanceSpec)
 	if err != nil {
 		panic(fmt.Errorf("convert spec %#v to pb failed: %v", instanceSpec, err))

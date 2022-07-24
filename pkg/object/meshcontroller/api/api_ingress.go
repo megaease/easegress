@@ -25,7 +25,7 @@ import (
 	"sort"
 
 	"github.com/go-chi/chi/v5"
-	v1alpha1 "github.com/megaease/easemesh-api/v1alpha1"
+	v2alpha1 "github.com/megaease/easemesh-api/v2alpha1"
 
 	"github.com/megaease/easegress/pkg/api"
 	"github.com/megaease/easegress/pkg/logger"
@@ -51,9 +51,9 @@ func (a *API) listIngresses(w http.ResponseWriter, r *http.Request) {
 	specs := a.service.ListIngressSpecs()
 
 	sort.Sort(ingressesByOrder(specs))
-	var apiSpecs []*v1alpha1.Ingress
+	var apiSpecs []*v2alpha1.Ingress
 	for _, v := range specs {
-		ingress := &v1alpha1.Ingress{}
+		ingress := &v2alpha1.Ingress{}
 		err := a.convertSpecToPB(v, ingress)
 		if err != nil {
 			logger.Errorf("convert spec %#v to pb spec failed: %v", v, err)
@@ -71,7 +71,7 @@ func (a *API) listIngresses(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) createIngress(w http.ResponseWriter, r *http.Request) {
-	pbIngressSpec := &v1alpha1.Ingress{}
+	pbIngressSpec := &v2alpha1.Ingress{}
 	ingressSpec := &spec.Ingress{}
 
 	err := a.readAPISpec(r, pbIngressSpec, ingressSpec)
@@ -107,7 +107,7 @@ func (a *API) getIngress(w http.ResponseWriter, r *http.Request) {
 		api.HandleAPIError(w, r, http.StatusNotFound, fmt.Errorf("%s not found", ingressName))
 		return
 	}
-	pbIngressSpec := &v1alpha1.Ingress{}
+	pbIngressSpec := &v2alpha1.Ingress{}
 	err = a.convertSpecToPB(ingressSpec, pbIngressSpec)
 	if err != nil {
 		panic(fmt.Errorf("convert spec %#v to pb failed: %v", ingressSpec, err))
@@ -123,7 +123,7 @@ func (a *API) getIngress(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) updateIngress(w http.ResponseWriter, r *http.Request) {
-	pbIngressSpec := &v1alpha1.Ingress{}
+	pbIngressSpec := &v2alpha1.Ingress{}
 	ingressSpec := &spec.Ingress{}
 
 	ingressName, err := a.readIngressName(r)

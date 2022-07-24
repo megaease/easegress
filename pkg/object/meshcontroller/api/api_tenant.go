@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	v1alpha1 "github.com/megaease/easemesh-api/v1alpha1"
+	v2alpha1 "github.com/megaease/easemesh-api/v2alpha1"
 
 	"github.com/megaease/easegress/pkg/api"
 	"github.com/megaease/easegress/pkg/logger"
@@ -53,9 +53,9 @@ func (a *API) listTenants(w http.ResponseWriter, r *http.Request) {
 
 	sort.Sort(tenantsByOrder(specs))
 
-	var apiSpecs []*v1alpha1.Tenant
+	var apiSpecs []*v2alpha1.Tenant
 	for _, v := range specs {
-		tenant := &v1alpha1.Tenant{}
+		tenant := &v2alpha1.Tenant{}
 		err := a.convertSpecToPB(v, &tenant)
 		if err != nil {
 			logger.Errorf("convert spec %#v to pb spec failed: %v", v, err)
@@ -74,7 +74,7 @@ func (a *API) listTenants(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) createTenant(w http.ResponseWriter, r *http.Request) {
-	pbTenantSpec := &v1alpha1.Tenant{}
+	pbTenantSpec := &v2alpha1.Tenant{}
 	tenantSpec := &spec.Tenant{}
 
 	err := a.readAPISpec(r, pbTenantSpec, tenantSpec)
@@ -118,7 +118,7 @@ func (a *API) getTenant(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pbTenantSpec := &v1alpha1.Tenant{}
+	pbTenantSpec := &v2alpha1.Tenant{}
 	err = a.convertSpecToPB(tenantSpec, pbTenantSpec)
 	if err != nil {
 		panic(fmt.Errorf("convert spec %#v to pb failed: %v", tenantSpec, err))
@@ -134,7 +134,7 @@ func (a *API) getTenant(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) updateTenant(w http.ResponseWriter, r *http.Request) {
-	pbTenantSpec := &v1alpha1.Tenant{}
+	pbTenantSpec := &v2alpha1.Tenant{}
 	tenantSpec := &spec.Tenant{}
 
 	tenantName, err := a.readTenantName(r)

@@ -23,21 +23,26 @@ import "fmt"
 // Status means dynamic, different in every member.
 // Config means static, same in every member.
 const (
-	leaseFormat              = "/leases/%s" //+memberName
-	statusMemberPrefix       = "/status/members/"
-	statusMemberFormat       = "/status/members/%s" // +memberName
-	statusObjectPrefix       = "/status/objects/"
-	statusObjectNameFormat   = "%s-%s"                 // +kind + name
-	statusObjectPrefixFormat = "/status/objects/%s/"   // +objectName
-	statusObjectFormat       = "/status/objects/%s/%s" // +objectName +memberName
-	configObjectPrefix       = "/config/objects/"
-	configObjectFormat       = "/config/objects/%s" // +objectName
-	configVersion            = "/config/version"
-	wasmCodeEvent            = "/wasm/code"
-	wasmDataPrefixFormat     = "/wasm/data/%s/%s/" // + pipelineName + filterName
-	customDataKindPrefix     = "/custom-data-kinds/"
-	customDataPrefix         = "/custom-data/"
-	fullObjectNameFormat     = "%s/%s" // +namespace + name
+	// NamespaceDefault is the default namespace of object.
+	NamespaceDefault = "default"
+	// NamespaceSystemPrefix is the prefix of system namespace.
+	// all namespaces started with this prefix is reserved for system.
+	// The users should avoid creating namespaces started with this prefix.
+	NamespaceSystemPrefix  = "eg-"
+	NamespacetrafficPrefix = "eg-traffic-"
+
+	leaseFormat          = "/leases/%s" //+memberName
+	statusMemberPrefix   = "/status/members/"
+	statusMemberFormat   = "/status/members/%s" // +memberName
+	statusObjectPrefix   = "/status/objects/"
+	statusObjectFormat   = "/status/objects/%s/%s/%s" // +namespace +objectName +memberName
+	configObjectPrefix   = "/config/objects/"
+	configObjectFormat   = "/config/objects/%s" // +objectName
+	configVersion        = "/config/version"
+	wasmCodeEvent        = "/wasm/code"
+	wasmDataPrefixFormat = "/wasm/data/%s/%s/" // + pipelineName + filterName
+	customDataKindPrefix = "/custom-data-kinds/"
+	customDataPrefix     = "/custom-data/"
 
 	// the cluster name of this eg group will be registered under this path in etcd
 	// any new member(primary or secondary ) will be rejected if it is configured a different cluster name
@@ -50,6 +55,16 @@ type (
 		memberName string
 	}
 )
+
+// SystemNamespace returns the system namespace.
+func SystemNamespace(name string) string {
+	return NamespaceSystemPrefix + name
+}
+
+// TrafficNamespace returns the traffic namespace.
+func TrafficNamespace(name string) string {
+	return NamespacetrafficPrefix + name
+}
 
 func (c *cluster) initLayout() {
 	c.layout = &Layout{
@@ -99,22 +114,12 @@ func (l *Layout) StatusObjectsPrefix() string {
 
 // StatusObjectPrefix returns the prefix of object status.
 func (l *Layout) StatusObjectPrefix(name string) string {
-	return fmt.Sprintf(statusObjectPrefixFormat, name)
-}
-
-// StatusObjectName returns the name of the status object.
-func (l *Layout) StatusObjectName(kind string, name string) string {
-	return fmt.Sprintf(statusObjectNameFormat, kind, name)
-}
-
-// FullObjectName returns the full object name.
-func (l *Layout) FullObjectName(namespace string, name string) string {
-	return fmt.Sprintf(fullObjectNameFormat, namespace, name)
+	return statusObjectPrefix
 }
 
 // StatusObjectKey returns the key of object status.
-func (l *Layout) StatusObjectKey(name string) string {
-	return fmt.Sprintf(statusObjectFormat, name, l.memberName)
+func (l *Layout) StatusObjectKey(namespace, name string) string {
+	return fmt.Sprintf(statusObjectFormat, namespace, name, l.memberName)
 }
 
 // ConfigObjectPrefix returns the prefix of object config.

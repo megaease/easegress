@@ -309,7 +309,8 @@ var stateStrings = []string{
 // NewPolicy create and initialize a policy
 func NewPolicy(failureRateThreshold, slowCallRateThreshold, slidingWindowType uint8,
 	slidingWindowSize, permittedNumberOfCallsInHalfOpen, minimumNumberOfCalls uint32,
-	slowCallDurationThreshold, maxWaitDurationInHalfOpen, waitDurationInOpen time.Duration) *Policy {
+	slowCallDurationThreshold, maxWaitDurationInHalfOpen, waitDurationInOpen time.Duration,
+) *Policy {
 	return &Policy{
 		FailureRateThreshold:             failureRateThreshold,
 		SlowCallRateThreshold:            slowCallRateThreshold,

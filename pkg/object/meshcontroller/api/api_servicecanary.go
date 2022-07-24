@@ -24,7 +24,7 @@ import (
 	"path"
 
 	"github.com/go-chi/chi/v5"
-	v1alpha1 "github.com/megaease/easemesh-api/v1alpha1"
+	v2alpha1 "github.com/megaease/easemesh-api/v2alpha1"
 
 	"github.com/megaease/easegress/pkg/api"
 	"github.com/megaease/easegress/pkg/logger"
@@ -44,9 +44,9 @@ func (a *API) listServiceCanaries(w http.ResponseWriter, r *http.Request) {
 	// NOTE: specs has been sorted alread.
 	specs := a.service.ListServiceCanaries()
 
-	var apiSpecs []*v1alpha1.ServiceCanary
+	var apiSpecs []*v2alpha1.ServiceCanary
 	for _, v := range specs {
-		serviceCanary := &v1alpha1.ServiceCanary{}
+		serviceCanary := &v2alpha1.ServiceCanary{}
 		err := a.convertSpecToPB(v, serviceCanary)
 		if err != nil {
 			logger.Errorf("convert spec %#v to pb spec failed: %v", v, err)
@@ -64,7 +64,7 @@ func (a *API) listServiceCanaries(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) createServiceCanary(w http.ResponseWriter, r *http.Request) {
-	pbServiceCanarySpec := &v1alpha1.ServiceCanary{}
+	pbServiceCanarySpec := &v2alpha1.ServiceCanary{}
 	serviceCanarySpec := &spec.ServiceCanary{}
 
 	err := a.readAPISpec(r, pbServiceCanarySpec, serviceCanarySpec)
@@ -104,7 +104,7 @@ func (a *API) getServiceCanary(w http.ResponseWriter, r *http.Request) {
 		api.HandleAPIError(w, r, http.StatusNotFound, fmt.Errorf("%s not found", serviceCanaryName))
 		return
 	}
-	pbServiceCanarySpec := &v1alpha1.ServiceCanary{}
+	pbServiceCanarySpec := &v2alpha1.ServiceCanary{}
 	err = a.convertSpecToPB(serviceCanarySpec, pbServiceCanarySpec)
 	if err != nil {
 		panic(fmt.Errorf("convert spec %#v to pb failed: %v", serviceCanarySpec, err))
@@ -120,7 +120,7 @@ func (a *API) getServiceCanary(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) updateServiceCanary(w http.ResponseWriter, r *http.Request) {
-	pbServiceCanarySpec := &v1alpha1.ServiceCanary{}
+	pbServiceCanarySpec := &v2alpha1.ServiceCanary{}
 	serviceCanarySpec := &spec.ServiceCanary{}
 
 	serviceCanaryName, err := a.readServiceCanaryName(r)

@@ -26,7 +26,7 @@ import (
 	"github.com/megaease/easegress/pkg/api"
 	"github.com/megaease/easegress/pkg/logger"
 	"github.com/megaease/easegress/pkg/object/meshcontroller/spec"
-	"github.com/megaease/easemesh-api/v1alpha1"
+	"github.com/megaease/easemesh-api/v2alpha1"
 )
 
 func (a *API) listHTTPRouteGroups(w http.ResponseWriter, r *http.Request) {
@@ -35,9 +35,9 @@ func (a *API) listHTTPRouteGroups(w http.ResponseWriter, r *http.Request) {
 		return groups[i].Name < groups[j].Name
 	})
 
-	var pbGroups []*v1alpha1.HTTPRouteGroup
+	var pbGroups []*v2alpha1.HTTPRouteGroup
 	for _, v := range groups {
-		group := &v1alpha1.HTTPRouteGroup{}
+		group := &v2alpha1.HTTPRouteGroup{}
 		err := a.convertSpecToPB(v, group)
 		if err != nil {
 			logger.Errorf("convert spec %#v to pb spec failed: %v", v, err)
@@ -66,7 +66,7 @@ func (a *API) getHTTPRouteGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pbGroup := &v1alpha1.HTTPRouteGroup{}
+	pbGroup := &v2alpha1.HTTPRouteGroup{}
 	err = a.convertSpecToPB(group, pbGroup)
 	if err != nil {
 		panic(fmt.Errorf("convert spec %#v to pb failed: %v", group, err))
@@ -80,7 +80,7 @@ func (a *API) getHTTPRouteGroup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) saveHTTPRouteGroup(w http.ResponseWriter, r *http.Request, update bool) error {
-	pbGroup := &v1alpha1.HTTPRouteGroup{}
+	pbGroup := &v2alpha1.HTTPRouteGroup{}
 	group := &spec.HTTPRouteGroup{}
 
 	err := a.readAPISpec(r, pbGroup, group)
@@ -147,9 +147,9 @@ func (a *API) listTrafficTargets(w http.ResponseWriter, r *http.Request) {
 		return tts[i].Name < tts[j].Name
 	})
 
-	var pbTrafficTargets []*v1alpha1.TrafficTarget
+	var pbTrafficTargets []*v2alpha1.TrafficTarget
 	for _, v := range tts {
-		tt := &v1alpha1.TrafficTarget{}
+		tt := &v2alpha1.TrafficTarget{}
 		err := a.convertSpecToPB(v, tt)
 		if err != nil {
 			logger.Errorf("convert spec %#v to pb spec failed: %v", v, err)
@@ -178,7 +178,7 @@ func (a *API) getTrafficTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pbTrafficTarget := &v1alpha1.TrafficTarget{}
+	pbTrafficTarget := &v2alpha1.TrafficTarget{}
 	err = a.convertSpecToPB(tt, pbTrafficTarget)
 	if err != nil {
 		panic(fmt.Errorf("convert spec %#v to pb failed: %v", tt, err))
@@ -192,7 +192,7 @@ func (a *API) getTrafficTarget(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) saveTrafficTarget(w http.ResponseWriter, r *http.Request, update bool) error {
-	pbTrafficTarget := &v1alpha1.TrafficTarget{}
+	pbTrafficTarget := &v2alpha1.TrafficTarget{}
 	tt := &spec.TrafficTarget{}
 
 	err := a.readAPISpec(r, pbTrafficTarget, tt)

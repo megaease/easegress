@@ -1,5 +1,4 @@
-/*
- * Copyright (c) 2017, MegaEase
+/* * Copyright (c) 2017, MegaEase
  * All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,11 +22,11 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/megaease/easegress/pkg/cluster"
 	"github.com/megaease/easegress/pkg/logger"
 	"github.com/megaease/easegress/pkg/supervisor"
 	"github.com/megaease/easegress/pkg/util/timetool"
 
-	"github.com/megaease/easegress/pkg/object/rawconfigtrafficcontroller"
 	"github.com/megaease/easegress/pkg/object/trafficcontroller"
 )
 
@@ -48,11 +47,13 @@ type (
 		superSpec *supervisor.Spec
 		spec      *Spec
 
-		timer            *timetool.DistributedTimer
-		lastSyncStatuses map[string]string
+		timer *timetool.DistributedTimer
+
+		lastSyncStatusUnits map[string]*statusUnit
+
 		// sorted by timestamp in ascending order
-		statusesRecords      []*StatusesRecord
-		StatusesRecordsMutex sync.RWMutex
+		statusSnapshots      []*StatusesSnapshot
+		statusSnapshotsMutex sync.RWMutex
 
 		// statusUpdateMaxBatchSize is maximum statuses to update in one cluster transaction
 		statusUpdateMaxBatchSize int
@@ -63,15 +64,39 @@ type (
 	// Spec describes StatusSyncController.
 	Spec struct{}
 
-	// StatusesRecord is the history record for status of every running object.
-	StatusesRecord struct {
+	// StatusesSnapshot is the history record for status of every running object.
+	StatusesSnapshot struct {
 		Statuses      map[string]*supervisor.Status
 		UnixTimestamp int64
 	}
+
+	statusUnit struct {
+		namespace  string
+		objectName string
+		timestamp  int64
+		status     interface{}
+	}
 )
 
-func marshalStatus(status *supervisor.Status) ([]byte, error) {
-	buff, err := yaml.Marshal(status.ObjectStatus)
+func newStatusUnit(namespace, objectName string, timestamp int64, status interface{}) *statusUnit {
+	return &statusUnit{
+		namespace:  namespace,
+		objectName: objectName,
+		timestamp:  timestamp,
+		status:     status,
+	}
+}
+
+func (s *statusUnit) clusterKey(layout *cluster.Layout) string {
+	return layout.StatusObjectKey(s.namespace, s.objectName)
+}
+
+func (s *statusUnit) id() string {
+	return s.namespace + "/" + s.objectName
+}
+
+func (s *statusUnit) marshal() ([]byte, error) {
+	buff, err := yaml.Marshal(s.status)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +111,7 @@ func marshalStatus(status *supervisor.Status) ([]byte, error) {
 		m = map[string]interface{}{}
 	}
 
-	m["timestamp"] = status.Timestamp
+	m["timestamp"] = s.timestamp
 
 	buff, err = yaml.Marshal(m)
 	if err != nil {
@@ -165,39 +190,8 @@ func (ssc *StatusSyncController) Close() {
 	ssc.timer.Close()
 }
 
-func safeMarshal(value *supervisor.Status) (string, bool) {
-	buff, err := marshalStatus(value)
-	if err != nil {
-		logger.Errorf("BUG: marshal %#v to yaml failed: %v",
-			value, err)
-		return "", false
-	}
-	return string(buff), true
-}
-
-// key: namespace/kind/objectName
-func (ssc *StatusSyncController) splitNamespaceStatus(status *trafficcontroller.StatusInSameNamespace,
-	targetStatuses map[string]string, targetStatusesRecord *StatusesRecord) bool {
-
-	for key, value := range status.ToSyncStatus() {
-		name := ssc.superSpec.Super().Cluster().Layout().FullObjectName(status.Namespace, key)
-		targetStatusesRecord.Statuses[name] = value
-
-		marshalledValue, ok := safeMarshal(value)
-		if !ok {
-			return false
-		}
-		targetStatuses[name] = marshalledValue
-	}
-	return true
-}
-
 func (ssc *StatusSyncController) handleStatus(unixTimestamp int64) {
-	statuses := make(map[string]string)
-	statusesRecord := &StatusesRecord{
-		Statuses:      make(map[string]*supervisor.Status),
-		UnixTimestamp: unixTimestamp,
-	}
+	statusUnits := make(map[string]*statusUnit)
 
 	walkFn := func(entity *supervisor.ObjectEntity) bool {
 		defer func() {
@@ -207,45 +201,42 @@ func (ssc *StatusSyncController) handleStatus(unixTimestamp int64) {
 			}
 		}()
 
-		name := entity.Spec().Name()
-
+		namespace := cluster.NamespaceDefault
+		objectName := entity.Spec().Name()
 		status := entity.Instance().Status()
 		status.Timestamp = unixTimestamp
 
-		if trafficStatus, ok := status.ObjectStatus.(*trafficcontroller.Status); ok {
-			statusInNamespaces := trafficStatus.Specs
-			for _, statInNS := range statusInNamespaces {
-				if !ssc.splitNamespaceStatus(statInNS, statuses, statusesRecord) {
-					return false
+		switch objectStatus := status.ObjectStatus.(type) {
+		case *trafficcontroller.Status:
+			for _, namespaceStatus := range objectStatus.Namespaces {
+				namespace := namespaceStatus.TrafficNamespace()
+				for _, trafficObject := range namespaceStatus.TrafficObjects {
+					su := newStatusUnit(namespace, trafficObject.Name,
+						unixTimestamp, trafficObject.TrafficObjectStatus)
+					statusUnits[su.id()] = su
 				}
 			}
-			return true
-		} else if rawTrafficStatus, ok := status.ObjectStatus.(*rawconfigtrafficcontroller.Status); ok {
-			return ssc.splitNamespaceStatus(rawTrafficStatus, statuses, statusesRecord)
-		} else {
-			statusesRecord.Statuses[name] = status
-			marshalledValue, ok := safeMarshal(status)
-			if !ok {
-				return false
-			}
-			statuses[name] = marshalledValue
+		default:
+			su := newStatusUnit(namespace, objectName, unixTimestamp, status.ObjectStatus)
+			statusUnits[su.id()] = su
 		}
+
 		return true
 	}
 
 	ssc.superSpec.Super().WalkControllers(walkFn)
 
-	ssc.addStatusesRecord(statusesRecord)
-	ssc.syncStatusToCluster(statuses)
+	ssc.takeSnapshot(statusUnits, unixTimestamp)
+	ssc.syncStatusToCluster(statusUnits)
 }
 
-func (ssc *StatusSyncController) syncStatusToCluster(statuses map[string]string) {
+func (ssc *StatusSyncController) syncStatusToCluster(statusUnits map[string]*statusUnit) {
 	// Delete statuses which disappeared in current status.
-	if ssc.lastSyncStatuses != nil {
+	if ssc.lastSyncStatusUnits != nil {
 		kvs := make(map[string]*string)
-		for k := range ssc.lastSyncStatuses {
-			if _, exists := statuses[k]; !exists {
-				k = ssc.superSpec.Super().Cluster().Layout().StatusObjectKey(k)
+		for k := range ssc.lastSyncStatusUnits {
+			if su, exists := statusUnits[k]; !exists {
+				k = su.clusterKey(ssc.superSpec.Super().Cluster().Layout())
 				kvs[k] = nil
 			}
 		}
@@ -256,13 +247,20 @@ func (ssc *StatusSyncController) syncStatusToCluster(statuses map[string]string)
 		}
 	}
 
-	ssc.lastSyncStatuses = statuses
+	ssc.lastSyncStatusUnits = statusUnits
 
 	kvs := make(map[string]*string)
-	for k, value := range statuses {
-		key := ssc.superSpec.Super().Cluster().Layout().StatusObjectKey(k)
-		v := value
-		kvs[key] = &v
+	for _, su := range statusUnits {
+		key := su.clusterKey(ssc.superSpec.Super().Cluster().Layout())
+		buff, err := su.marshal()
+		if err != nil {
+			logger.Errorf("BUG: marshal %#v failed: %v", su, err)
+			continue
+		}
+
+		value := string(buff)
+		kvs[key] = &value
+
 		if len(kvs) >= ssc.statusUpdateMaxBatchSize {
 			err := ssc.superSpec.Super().Cluster().PutAndDeleteUnderLease(kvs)
 			if err != nil {
@@ -272,6 +270,7 @@ func (ssc *StatusSyncController) syncStatusToCluster(statuses map[string]string)
 			kvs = make(map[string]*string)
 		}
 	}
+
 	if len(kvs) > 0 {
 		err := ssc.superSpec.Super().Cluster().PutAndDeleteUnderLease(kvs)
 		if err != nil {
@@ -281,22 +280,34 @@ func (ssc *StatusSyncController) syncStatusToCluster(statuses map[string]string)
 	}
 }
 
-func (ssc *StatusSyncController) addStatusesRecord(statusesRecord *StatusesRecord) {
-	ssc.StatusesRecordsMutex.Lock()
-	defer ssc.StatusesRecordsMutex.Unlock()
+func (ssc *StatusSyncController) takeSnapshot(statusUnits map[string]*statusUnit, timestamp int64) {
+	snapshot := &StatusesSnapshot{
+		Statuses:      make(map[string]*supervisor.Status),
+		UnixTimestamp: timestamp,
+	}
 
-	ssc.statusesRecords = append(ssc.statusesRecords, statusesRecord)
-	if len(ssc.statusesRecords) > maxStatusesRecordCount {
-		ssc.statusesRecords = ssc.statusesRecords[1:]
+	for _, su := range statusUnits {
+		snapshot.Statuses[su.id()] = &supervisor.Status{
+			ObjectStatus: su.status,
+			Timestamp:    timestamp,
+		}
+	}
+
+	ssc.statusSnapshotsMutex.Lock()
+	defer ssc.statusSnapshotsMutex.Unlock()
+
+	ssc.statusSnapshots = append(ssc.statusSnapshots, snapshot)
+	if len(ssc.statusSnapshots) > maxStatusesRecordCount {
+		ssc.statusSnapshots = ssc.statusSnapshots[1:]
 	}
 }
 
-// GetStatusesRecords return the latest statuses records.
-func (ssc *StatusSyncController) GetStatusesRecords() []*StatusesRecord {
-	ssc.StatusesRecordsMutex.RLock()
-	defer ssc.StatusesRecordsMutex.RUnlock()
+// GetStatusSnapshots return the latest status snapshots.
+func (ssc *StatusSyncController) GetStatusSnapshots() []*StatusesSnapshot {
+	ssc.statusSnapshotsMutex.RLock()
+	defer ssc.statusSnapshotsMutex.RUnlock()
 
-	records := make([]*StatusesRecord, len(ssc.statusesRecords))
-	copy(records, ssc.statusesRecords)
+	records := make([]*StatusesSnapshot, len(ssc.statusSnapshots))
+	copy(records, ssc.statusSnapshots)
 	return records
 }

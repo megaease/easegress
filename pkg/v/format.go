@@ -74,7 +74,7 @@ func urlName(v interface{}) error {
 		return nil
 	}
 
-	return fmt.Errorf("invalid name format")
+	return fmt.Errorf("invalid name format: %s", v)
 }
 
 func httpMethod(v interface{}) error {

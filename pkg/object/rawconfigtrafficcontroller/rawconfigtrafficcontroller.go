@@ -53,9 +53,6 @@ type (
 
 	// Spec describes RawConfigTrafficController.
 	Spec struct{}
-
-	// Status is the status of RawConfigTrafficController.
-	Status = trafficcontroller.StatusInSameNamespace
 )
 
 func init() {
@@ -191,26 +188,8 @@ func (rctc *RawConfigTrafficController) handleEvent(event *supervisor.ObjectEnti
 //  - TrafficGates: map[objectName]objectStatus
 //  - Pipelines: map[objectName]objectStatus
 func (rctc *RawConfigTrafficController) Status() *supervisor.Status {
-	trafficGates := make(map[string]interface{})
-	rctc.tc.WalkTrafficGates(rctc.namespace, func(entity *supervisor.ObjectEntity) bool {
-		status := entity.Instance().Status().ObjectStatus
-		trafficGates[entity.Spec().Name()] = status
-		return true
-	})
-
-	pipelines := make(map[string]*pipeline.Status)
-	rctc.tc.WalkPipelines(rctc.namespace, func(entity *supervisor.ObjectEntity) bool {
-		status := entity.Instance().Status().ObjectStatus.(*pipeline.Status)
-		pipelines[entity.Spec().Name()] = status
-		return true
-	})
-
 	return &supervisor.Status{
-		ObjectStatus: &Status{
-			Namespace:    rctc.namespace,
-			TrafficGates: trafficGates,
-			Pipelines:    pipelines,
-		},
+		ObjectStatus: struct{}{},
 	}
 }
 

@@ -72,7 +72,11 @@ type (
 	// Spec is the configuration of a rate limiter
 	Spec struct {
 		filters.BaseSpec `yaml:",inline"`
+		Rule             `yaml:",inline"`
+	}
 
+	// Rule is the detailed config of RateLimiter.
+	Rule struct {
 		Policies         []*Policy  `yaml:"policies" jsonschema:"required"`
 		DefaultPolicyRef string     `yaml:"defaultPolicyRef" jsonschema:"omitempty"`
 		URLs             []*URLRule `yaml:"urls" jsonschema:"required"`

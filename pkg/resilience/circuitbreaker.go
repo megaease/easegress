@@ -32,14 +32,16 @@ var CircuitBreakerKind = &Kind{
 
 	DefaultPolicy: func() Policy {
 		return &CircuitBreakerPolicy{
-			FailureRateThreshold:             50,
-			SlowCallRateThreshold:            100,
-			SlidingWindowType:                "COUNT_BASED",
-			SlidingWindowSize:                100,
-			PermittedNumberOfCallsInHalfOpen: 10,
-			MinimumNumberOfCalls:             100,
-			SlowCallDurationThreshold:        "1m",
-			WaitDurationInOpen:               "1m",
+			CircuitBreakerRule: CircuitBreakerRule{
+				FailureRateThreshold:             50,
+				SlowCallRateThreshold:            100,
+				SlidingWindowType:                "COUNT_BASED",
+				SlidingWindowSize:                100,
+				PermittedNumberOfCallsInHalfOpen: 10,
+				MinimumNumberOfCalls:             100,
+				SlowCallDurationThreshold:        "1m",
+				WaitDurationInOpen:               "1m",
+			},
 		}
 	},
 }
@@ -50,20 +52,26 @@ var _ Policy = (*CircuitBreakerPolicy)(nil)
 // circuit was short circuited.
 var ErrShortCircuited = errors.New("the call was short circuited")
 
-// CircuitBreakerPolicy defines the circuit break policy.
-type CircuitBreakerPolicy struct {
-	BaseSpec                         `yaml:",inline"`
-	SlidingWindowType                string `yaml:"slidingWindowType"  jsonschema:"omitempty,enum=COUNT_BASED,enum=TIME_BASED"`
-	FailureRateThreshold             uint8  `yaml:"failureRateThreshold" jsonschema:"omitempty,minimum=1,maximum=100"`
-	SlowCallRateThreshold            uint8  `yaml:"slowCallRateThreshold" jsonschema:"omitempty,minimum=1,maximum=100"`
-	CountingNetworkError             bool   `yaml:"countingNetworkError" jsonschema:"omitempty"`
-	SlidingWindowSize                uint32 `yaml:"slidingWindowSize" jsonschema:"omitempty,minimum=1"`
-	PermittedNumberOfCallsInHalfOpen uint32 `yaml:"permittedNumberOfCallsInHalfOpenState" jsonschema:"omitempty"`
-	MinimumNumberOfCalls             uint32 `yaml:"minimumNumberOfCalls" jsonschema:"omitempty"`
-	SlowCallDurationThreshold        string `yaml:"slowCallDurationThreshold" jsonschema:"omitempty,format=duration"`
-	MaxWaitDurationInHalfOpen        string `yaml:"maxWaitDurationInHalfOpenState" jsonschema:"omitempty,format=duration"`
-	WaitDurationInOpen               string `yaml:"waitDurationInOpenState" jsonschema:"omitempty,format=duration"`
-}
+type (
+	// CircuitBreakerPolicy defines the circuit break policy.
+	CircuitBreakerPolicy struct {
+		BaseSpec           `yaml:",inline"`
+		CircuitBreakerRule `yaml:",inline"`
+	}
+
+	// CircuitBreakerRule is the detailed config of circuit breaker.
+	CircuitBreakerRule struct {
+		SlidingWindowType                string `yaml:"slidingWindowType"  jsonschema:"omitempty,enum=COUNT_BASED,enum=TIME_BASED"`
+		FailureRateThreshold             uint8  `yaml:"failureRateThreshold" jsonschema:"omitempty,minimum=1,maximum=100"`
+		SlowCallRateThreshold            uint8  `yaml:"slowCallRateThreshold" jsonschema:"omitempty,minimum=1,maximum=100"`
+		SlidingWindowSize                uint32 `yaml:"slidingWindowSize" jsonschema:"omitempty,minimum=1"`
+		PermittedNumberOfCallsInHalfOpen uint32 `yaml:"permittedNumberOfCallsInHalfOpenState" jsonschema:"omitempty"`
+		MinimumNumberOfCalls             uint32 `yaml:"minimumNumberOfCalls" jsonschema:"omitempty"`
+		SlowCallDurationThreshold        string `yaml:"slowCallDurationThreshold" jsonschema:"omitempty,format=duration"`
+		MaxWaitDurationInHalfOpen        string `yaml:"maxWaitDurationInHalfOpenState" jsonschema:"omitempty,format=duration"`
+		WaitDurationInOpen               string `yaml:"waitDurationInOpenState" jsonschema:"omitempty,format=duration"`
+	}
+)
 
 // Validate validates the CircuitBreakPolicy.
 func (p *CircuitBreakerPolicy) Validate() error {

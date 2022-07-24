@@ -115,45 +115,6 @@ func (s *Service) GetServiceSpecWithInfo(serviceName string) (*spec.Service, *mv
 	return serviceSpec, kv
 }
 
-// GetGlobalCanaryHeaders gets the global canary headers
-func (s *Service) GetGlobalCanaryHeaders() *spec.GlobalCanaryHeaders {
-	globalCanaryHeaders, _ := s.GetGlobalCanaryHeadersWithInfo()
-	return globalCanaryHeaders
-}
-
-// GetGlobalCanaryHeadersWithInfo gets the global canary headers with information
-func (s *Service) GetGlobalCanaryHeadersWithInfo() (*spec.GlobalCanaryHeaders, *mvccpb.KeyValue) {
-	kv, err := s.store.GetRaw(layout.GlobalCanaryHeaders())
-	if err != nil {
-		api.ClusterPanic(err)
-	}
-
-	if kv == nil {
-		return nil, nil
-	}
-
-	globalCanaryHeaders := &spec.GlobalCanaryHeaders{}
-	err = yaml.Unmarshal([]byte(kv.Value), globalCanaryHeaders)
-	if err != nil {
-		panic(fmt.Errorf("BUG: unmarshal %s to yaml failed: %v", string(kv.Value), err))
-	}
-
-	return globalCanaryHeaders, kv
-}
-
-// PutGlobalCanaryHeaders puts the global canary headers
-func (s *Service) PutGlobalCanaryHeaders(globalCanaryHeaders *spec.GlobalCanaryHeaders) {
-	buff, err := yaml.Marshal(globalCanaryHeaders)
-	if err != nil {
-		panic(fmt.Errorf("BUG: marshal %#v to yaml failed: %v", globalCanaryHeaders, err))
-	}
-
-	err = s.store.Put(layout.GlobalCanaryHeaders(), string(buff))
-	if err != nil {
-		api.ClusterPanic(err)
-	}
-}
-
 // DeleteServiceSpec deletes service spec by its name
 func (s *Service) DeleteServiceSpec(serviceName string) {
 	err := s.store.Delete(layout.ServiceSpecKey(serviceName))

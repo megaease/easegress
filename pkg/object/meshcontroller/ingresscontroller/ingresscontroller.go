@@ -28,7 +28,6 @@ import (
 	"github.com/megaease/easegress/pkg/object/meshcontroller/service"
 	"github.com/megaease/easegress/pkg/object/meshcontroller/spec"
 	"github.com/megaease/easegress/pkg/object/meshcontroller/storage"
-	"github.com/megaease/easegress/pkg/object/pipeline"
 	"github.com/megaease/easegress/pkg/object/trafficcontroller"
 	"github.com/megaease/easegress/pkg/supervisor"
 )
@@ -56,7 +55,7 @@ type (
 	}
 
 	// Status is the traffic controller status
-	Status = trafficcontroller.StatusInSameNamespace
+	Status = trafficcontroller.NamespacesStatus
 )
 
 // New creates a mesh ingress controller.
@@ -87,7 +86,7 @@ func New(superSpec *supervisor.Spec) *IngressController {
 		informer:  informer.NewInformer(store, ""),
 		service:   service.New(superSpec),
 		tc:        tc,
-		namespace: fmt.Sprintf("%s/%s", superSpec.Name(), "ingresscontroller"),
+		namespace: superSpec.Name(),
 
 		backendPipelines: make(map[string]*supervisor.ObjectEntity),
 		ingressBackends:  make(map[string]struct{}),
@@ -278,7 +277,7 @@ func (ic *IngressController) _reloadPipelines() {
 }
 
 func (ic *IngressController) _reloadHTTPServer() {
-	superSpec, err := spec.IngressHTTPServerSpec(ic.spec.IngressPort, ic.ingressRules)
+	superSpec, err := spec.IngressControllerHTTPServerSpec(ic.spec.IngressPort, ic.ingressRules)
 	if err != nil {
 		logger.Errorf("get ingress http server spec failed: %v", err)
 		return
@@ -295,24 +294,8 @@ func (ic *IngressController) _reloadHTTPServer() {
 
 // Status returns the status of IngressController.
 func (ic *IngressController) Status() *supervisor.Status {
-	status := &Status{
-		Namespace:    ic.namespace,
-		TrafficGates: make(map[string]interface{}),
-		Pipelines:    make(map[string]*pipeline.Status),
-	}
-
-	ic.tc.WalkTrafficGates(ic.namespace, func(entity *supervisor.ObjectEntity) bool {
-		status.TrafficGates[entity.Spec().Name()] = entity.Instance().Status().ObjectStatus
-		return true
-	})
-
-	ic.tc.WalkPipelines(ic.namespace, func(entity *supervisor.ObjectEntity) bool {
-		status.Pipelines[entity.Spec().Name()] = entity.Instance().Status().ObjectStatus.(*pipeline.Status)
-		return true
-	})
-
 	return &supervisor.Status{
-		ObjectStatus: status,
+		ObjectStatus: struct{}{},
 	}
 }
 

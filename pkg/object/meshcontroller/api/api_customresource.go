@@ -27,7 +27,7 @@ import (
 	"github.com/megaease/easegress/pkg/api"
 	"github.com/megaease/easegress/pkg/logger"
 	"github.com/megaease/easegress/pkg/object/meshcontroller/spec"
-	"github.com/megaease/easemesh-api/v1alpha1"
+	"github.com/megaease/easemesh-api/v2alpha1"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -45,9 +45,9 @@ func (a *API) listCustomResourceKinds(w http.ResponseWriter, r *http.Request) {
 		return kinds[i].Name < kinds[j].Name
 	})
 
-	var pbKinds []*v1alpha1.CustomResourceKind
+	var pbKinds []*v2alpha1.CustomResourceKind
 	for _, v := range kinds {
-		kind := &v1alpha1.CustomResourceKind{}
+		kind := &v2alpha1.CustomResourceKind{}
 		err := a.convertSpecToPB(v, kind)
 		if err != nil {
 			logger.Errorf("convert spec %#v to pb spec failed: %v", v, err)
@@ -76,7 +76,7 @@ func (a *API) getCustomResourceKind(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pbKind := &v1alpha1.CustomResourceKind{}
+	pbKind := &v2alpha1.CustomResourceKind{}
 	err = a.convertSpecToPB(kind, pbKind)
 	if err != nil {
 		panic(fmt.Errorf("convert spec %#v to pb failed: %v", kind, err))
@@ -90,7 +90,7 @@ func (a *API) getCustomResourceKind(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) saveCustomResourceKind(w http.ResponseWriter, r *http.Request, update bool) error {
-	pbKind := &v1alpha1.CustomResourceKind{}
+	pbKind := &v2alpha1.CustomResourceKind{}
 	kind := &spec.CustomResourceKind{}
 
 	err := a.readAPISpec(r, pbKind, kind)

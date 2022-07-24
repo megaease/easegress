@@ -21,13 +21,13 @@ const (
 	// KeyRole is the key of role
 	KeyRole = "mesh-role"
 	// KeyServiceName is the key of service name
-	KeyServiceName = "mesh-servicename"
+	KeyServiceName = "mesh-service-name"
 	// KeyServiceLabels is the key of service label
 	KeyServiceLabels = "mesh-service-labels"
 	// KeyApplicationPort is the key of application port
-	KeyApplicationPort = "application-port"
+	KeyApplicationPort = "mesh-application-port"
 	// KeyAliveProbe is the key of keepalive probe
-	KeyAliveProbe = "alive-probe"
+	KeyAliveProbe = "mesh-alive-probe"
 
 	// ValueRoleMaster is the name of master
 	ValueRoleMaster = "master"

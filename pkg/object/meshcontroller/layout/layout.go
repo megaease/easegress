@@ -58,8 +58,6 @@ const (
 	customResourcePrefix     = "/mesh/custom-resources/%s/"   // +kind
 	customResource           = "/mesh/custom-resources/%s/%s" // +kind +name
 
-	globalCanaryHeaders = "/mesh/canary-headers"
-
 	serviceCanaryPrefix = "/mesh/service-canary/"
 	serviceCanary       = "/mesh/service-canary/%s"
 )
@@ -122,11 +120,6 @@ func IngressSpecKey(t string) string {
 // IngressPrefix returns the prefix of ingress.
 func IngressPrefix() string {
 	return ingressPrefix
-}
-
-// GlobalCanaryHeaders returns the key of global service's canary headers.
-func GlobalCanaryHeaders() string {
-	return globalCanaryHeaders
 }
 
 // HTTPRouteGroupKey returns the key of HTTP route group spec.

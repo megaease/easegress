@@ -210,7 +210,7 @@ func (emm *EaseMonitorMetrics) sendMetrics(latestTimestamp int64) int64 {
 		return latestTimestamp
 	}
 
-	for _, record := range emm.ssc.GetStatusesRecords() {
+	for _, record := range emm.ssc.GetStatusSnapshots() {
 		if record.UnixTimestamp <= latestTimestamp {
 			continue
 		}

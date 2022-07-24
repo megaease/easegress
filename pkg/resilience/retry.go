@@ -29,24 +29,33 @@ var RetryKind = &Kind{
 
 	DefaultPolicy: func() Policy {
 		return &RetryPolicy{
-			MaxAttempts:   3,
-			WaitDuration:  "500ms",
-			BackOffPolicy: "random",
+			RetryRule: RetryRule{
+				MaxAttempts:   3,
+				WaitDuration:  "500ms",
+				BackOffPolicy: "random",
+			},
 		}
 	},
 }
 
 var _ Policy = (*RetryPolicy)(nil)
 
-// RetryPolicy defines the retry policy.
-type RetryPolicy struct {
-	BaseSpec            `yaml:",inline"`
-	MaxAttempts         int    `yaml:"maxAttempts" jsonschema:"omitempty,minimum=1"`
-	WaitDuration        string `yaml:"waitDuration" jsonschema:"omitempty,format=duration"`
-	waitDuration        time.Duration
-	BackOffPolicy       string  `yaml:"backOffPolicy" jsonschema:"omitempty,enum=random,enum=exponential"`
-	RandomizationFactor float64 `yaml:"randomizationFactor" jsonschema:"omitempty,minimum=0,maximum=1"`
-}
+type (
+	// RetryPolicy defines the retry policy.
+	RetryPolicy struct {
+		BaseSpec  `yaml:",inline"`
+		RetryRule `yaml:",inline"`
+	}
+
+	// RetryRule is the detailed config of retry
+	RetryRule struct {
+		MaxAttempts         int    `yaml:"maxAttempts" jsonschema:"omitempty,minimum=1"`
+		WaitDuration        string `yaml:"waitDuration" jsonschema:"omitempty,format=duration"`
+		waitDuration        time.Duration
+		BackOffPolicy       string  `yaml:"backOffPolicy" jsonschema:"omitempty,enum=random,enum=exponential"`
+		RandomizationFactor float64 `yaml:"randomizationFactor" jsonschema:"omitempty,minimum=0,maximum=1"`
+	}
+)
 
 // Validate validates the retry policy.
 func (p *RetryPolicy) Validate() error {

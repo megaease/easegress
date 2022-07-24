@@ -29,9 +29,8 @@ import (
 	"github.com/megaease/easegress/pkg/logger"
 	_ "github.com/megaease/easegress/pkg/object/httpserver"
 	"github.com/megaease/easegress/pkg/resilience"
-	"github.com/megaease/easegress/pkg/supervisor"
 	"github.com/megaease/easegress/pkg/util/urlrule"
-	v1alpha1 "github.com/megaease/easemesh-api/v1alpha1"
+	v2alpha1 "github.com/megaease/easemesh-api/v2alpha1"
 	"gopkg.in/yaml.v2"
 )
 
@@ -269,32 +268,6 @@ func TestSidecarEgressPipelineWithCanarySpec(t *testing.T) {
 			EgressPort:      9090,
 			EgressProtocol:  "http",
 		},
-
-		Canary: &Canary{
-			CanaryRules: []*CanaryRule{
-				{
-					Headers: map[string]*proxy.StringMatcher{
-						"X-canary": {
-							Exact: "lv1",
-						},
-					},
-					URLs: []*urlrule.URLRule{
-						{
-							Methods: []string{
-								"GET",
-								"POST",
-							},
-							URL: urlrule.StringMatch{
-								Prefix: "/",
-							},
-						},
-					},
-					ServiceInstanceLabels: map[string]string{
-						"version": "v1",
-					},
-				},
-			},
-		},
 	}
 
 	instanceSpecs := []*ServiceInstanceSpec{
@@ -368,14 +341,10 @@ func TestSidecarEgressPipelineSpecWithMock(t *testing.T) {
 }
 
 func TestMockPBConvert(t *testing.T) {
-	pbSpec := &v1alpha1.Mock{
+	pbSpec := &v2alpha1.Mock{
 		Enabled: true,
-		Rules: []*v1alpha1.MockRule{
+		Rules: []*v2alpha1.MockRule{
 			{
-				Match: &v1alpha1.MockMatchRule{
-					Path:       "/",
-					PathPrefix: "/abc",
-				},
 				Code: 200,
 				Headers: map[string]string{
 					"mock-by-eg": "yes",
@@ -410,53 +379,6 @@ func TestSidecarEgressPipelneNotLoadBalancer(t *testing.T) {
 			IngressProtocol: "http",
 			EgressPort:      9090,
 			EgressProtocol:  "http",
-		},
-
-		Canary: &Canary{
-			CanaryRules: []*CanaryRule{
-				{
-					Headers: map[string]*proxy.StringMatcher{
-						"X-canary": {
-							Exact: "lv1",
-						},
-					},
-					URLs: []*urlrule.URLRule{
-						{
-							Methods: []string{
-								"GET",
-								"POST",
-							},
-							URL: urlrule.StringMatch{
-								Prefix: "/",
-							},
-						},
-					},
-					ServiceInstanceLabels: map[string]string{
-						"version": "v1",
-					},
-				},
-				{
-					Headers: map[string]*proxy.StringMatcher{
-						"X-canary": {
-							Exact: "ams",
-						},
-					},
-					URLs: []*urlrule.URLRule{
-						{
-							Methods: []string{
-								"GET",
-								"POST",
-							},
-							URL: urlrule.StringMatch{
-								Prefix: "/",
-							},
-						},
-					},
-					ServiceInstanceLabels: map[string]string{
-						"version": "v2",
-					},
-				},
-			},
 		},
 	}
 
@@ -510,52 +432,6 @@ func TestSidecarEgressPipelineWithMultipleCanarySpec(t *testing.T) {
 			EgressPort:      9090,
 			EgressProtocol:  "http",
 		},
-		Canary: &Canary{
-			CanaryRules: []*CanaryRule{
-				{
-					Headers: map[string]*proxy.StringMatcher{
-						"X-canary": {
-							Exact: "lv1",
-						},
-					},
-					URLs: []*urlrule.URLRule{
-						{
-							Methods: []string{
-								"GET",
-								"POST",
-							},
-							URL: urlrule.StringMatch{
-								Prefix: "/",
-							},
-						},
-					},
-					ServiceInstanceLabels: map[string]string{
-						"version": "v1",
-					},
-				},
-				{
-					Headers: map[string]*proxy.StringMatcher{
-						"X-canary": {
-							Exact: "ams",
-						},
-					},
-					URLs: []*urlrule.URLRule{
-						{
-							Methods: []string{
-								"GET",
-								"POST",
-							},
-							URL: urlrule.StringMatch{
-								Prefix: "/",
-							},
-						},
-					},
-					ServiceInstanceLabels: map[string]string{
-						"version": "v2",
-					},
-				},
-			},
-		},
 	}
 
 	instanceSpecs := []*ServiceInstanceSpec{
@@ -605,31 +481,6 @@ func TestSidecarEgressPipelineWithCanaryNoInstanceSpec(t *testing.T) {
 			EgressPort:      9090,
 			EgressProtocol:  "http",
 		},
-		Canary: &Canary{
-			CanaryRules: []*CanaryRule{
-				{
-					Headers: map[string]*proxy.StringMatcher{
-						"X-canary": {
-							Exact: "aaa",
-						},
-					},
-					URLs: []*urlrule.URLRule{
-						{
-							Methods: []string{
-								"GET",
-								"POST",
-							},
-							URL: urlrule.StringMatch{
-								Prefix: "/",
-							},
-						},
-					},
-					ServiceInstanceLabels: map[string]string{
-						"version": "v1",
-					},
-				},
-			},
-		},
 	}
 
 	instanceSpecs := []*ServiceInstanceSpec{
@@ -678,32 +529,6 @@ func TestSidecarEgressPipelineWithCanaryInstanceMultipleLabelSpec(t *testing.T) 
 			IngressProtocol: "http",
 			EgressPort:      9090,
 			EgressProtocol:  "http",
-		},
-		Canary: &Canary{
-			CanaryRules: []*CanaryRule{
-				{
-					Headers: map[string]*proxy.StringMatcher{
-						"X-canary": {
-							Exact: "lv1",
-						},
-					},
-					URLs: []*urlrule.URLRule{
-						{
-							Methods: []string{
-								"GET",
-								"POST",
-							},
-							URL: urlrule.StringMatch{
-								Prefix: "/",
-							},
-						},
-					},
-					ServiceInstanceLabels: map[string]string{
-						"version": "v1",
-						"app":     "backend",
-					},
-				},
-			},
 		},
 	}
 
@@ -755,7 +580,7 @@ func TestIngressHTTPServerSpec(t *testing.T) {
 		},
 	}
 
-	_, err := IngressHTTPServerSpec(1233, rule)
+	_, err := IngressControllerHTTPServerSpec(1233, rule)
 	if err != nil {
 		t.Errorf("ingress http server spec failed: %v", err)
 	}
@@ -775,7 +600,7 @@ func TestSidecarIngressWithResiliencePipelineSpec(t *testing.T) {
 			EgressProtocol:  "http",
 		},
 		Resilience: &Resilience{
-			RateLimiter: &ratelimiter.Spec{
+			RateLimiter: &ratelimiter.Rule{
 				Policies: []*ratelimiter.Policy{{
 					Name:               "default",
 					TimeoutDuration:    "100ms",
@@ -817,12 +642,7 @@ func TestSidecarEgressResiliencePipelineSpec(t *testing.T) {
 		},
 
 		Resilience: &Resilience{
-			CircuitBreaker: &resilience.CircuitBreakerPolicy{
-				BaseSpec: resilience.BaseSpec{
-					MetaSpec: supervisor.MetaSpec{
-						Name: "default",
-					},
-				},
+			CircuitBreaker: &resilience.CircuitBreakerRule{
 				SlidingWindowType:                "COUNT_BASED",
 				FailureRateThreshold:             50,
 				SlowCallRateThreshold:            100,
@@ -832,22 +652,16 @@ func TestSidecarEgressResiliencePipelineSpec(t *testing.T) {
 				SlowCallDurationThreshold:        "100ms",
 				MaxWaitDurationInHalfOpen:        "60s",
 				WaitDurationInOpen:               "60s",
-				CountingNetworkError:             false,
 			},
 
-			Retryer: &resilience.RetryPolicy{
-				BaseSpec: resilience.BaseSpec{
-					MetaSpec: supervisor.MetaSpec{
-						Name: "default",
-					},
-				},
+			Retry: &resilience.RetryRule{
 				MaxAttempts:         3,
 				WaitDuration:        "500ms",
 				BackOffPolicy:       "random",
 				RandomizationFactor: 0.5,
 			},
 
-			TimeLimiter: &TimeLimiterPolicy{
+			TimeLimiter: &TimeLimiterRule{
 				Timeout: "500ms",
 			},
 		},
@@ -892,7 +706,7 @@ func TestPipelineBuilderFailed(t *testing.T) {
 func TestPipelineBuilder(t *testing.T) {
 	builder := newPipelineSpecBuilder("abc")
 
-	rateLimiter := &ratelimiter.Spec{
+	rateLimiter := &ratelimiter.Rule{
 		Policies: []*ratelimiter.Policy{{
 			Name:               "default",
 			TimeoutDuration:    "100ms",
@@ -1048,74 +862,6 @@ func TestSidecarIngressPipelineSpec(t *testing.T) {
 	fmt.Println(superSpec.YAMLConfig())
 }
 
-func TestUniqueCanaryHeadersEmpty(t *testing.T) {
-	s := &Service{
-		Name: "order-001",
-		LoadBalance: &LoadBalance{
-			Policy: proxy.LoadBalancePolicyRandom,
-		},
-		Sidecar: &Sidecar{
-			Address:         "127.0.0.1",
-			IngressPort:     8080,
-			IngressProtocol: "http",
-			EgressPort:      9090,
-			EgressProtocol:  "http",
-		},
-	}
-
-	val := s.UniqueCanaryHeaders()
-	if len(val) > 0 {
-		t.Errorf("canary header should be none")
-	}
-}
-
-func TestUniqueCanaryHeaders(t *testing.T) {
-	s := &Service{
-		Name: "order-002-canary",
-		LoadBalance: &LoadBalance{
-			Policy: proxy.LoadBalancePolicyIPHash,
-		},
-		Sidecar: &Sidecar{
-			Address:         "127.0.0.1",
-			IngressPort:     8080,
-			IngressProtocol: "http",
-			EgressPort:      9090,
-			EgressProtocol:  "http",
-		},
-
-		Canary: &Canary{
-			CanaryRules: []*CanaryRule{
-				{
-					Headers: map[string]*proxy.StringMatcher{
-						"X-canary": {
-							Exact: "lv1",
-						},
-					},
-					URLs: []*urlrule.URLRule{
-						{
-							Methods: []string{
-								"GET",
-								"POST",
-							},
-							URL: urlrule.StringMatch{
-								Prefix: "/",
-							},
-						},
-					},
-					ServiceInstanceLabels: map[string]string{
-						"version": "v1",
-					},
-				},
-			},
-		},
-	}
-
-	val := s.UniqueCanaryHeaders()
-	if len(val) == 0 {
-		t.Errorf("canary header should not be none")
-	}
-}
-
 func TestEgressName(t *testing.T) {
 	s := &Service{
 		Name: "order-001",
@@ -1130,32 +876,16 @@ func TestEgressName(t *testing.T) {
 			EgressProtocol:  "http",
 		},
 	}
-	if len(s.EgressHTTPServerName()) == 0 {
+	if len(s.SidecarEgressServerName()) == 0 {
 		t.Error("egress httpserver name should not be none")
 	}
 
-	if len(s.EgressHandlerName()) == 0 {
-		t.Error("egress httpserver handler should not be none")
-	}
-
-	if len(s.IngressHTTPServerName()) == 0 {
-		t.Error("ingress httpserver handler should not be none")
-	}
-
-	if len(s.IngressHandlerName()) == 0 {
+	if len(s.SidecarIngressHTTPServerName()) == 0 {
 		t.Error("ingress httpserver handler should not be none")
 	}
 
 	if len(s.BackendName()) == 0 {
 		t.Error("backend name should not be none")
-	}
-
-	if len(s.IngressEndpoint()) == 0 {
-		t.Error("ingress endpoint name should not be none")
-	}
-
-	if len(s.EgressEndpoint()) == 0 {
-		t.Error("egress endpoint name should not be none")
 	}
 }
 
@@ -1226,7 +956,10 @@ func TestAppendProxyWithCanary(t *testing.T) {
 		},
 	}
 
-	b.appendProxyWithCanary(instances, canaries, nil, nil, nil, "")
+	b.appendProxyWithCanary(&proxyParam{
+		instanceSpecs: instances,
+		canaries:      canaries,
+	})
 	buff, _ := yaml.Marshal(b.Spec)
 	t.Logf("%s", buff)
 }

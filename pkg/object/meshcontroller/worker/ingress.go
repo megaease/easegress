@@ -56,7 +56,8 @@ type (
 
 // NewIngressServer creates an initialized ingress server
 func NewIngressServer(superSpec *supervisor.Spec, super *supervisor.Supervisor,
-	serviceName, instaceID string, service *service.Service) *IngressServer {
+	serviceName, instaceID string, service *service.Service,
+) *IngressServer {
 	entity, exists := super.GetSystemController(trafficcontroller.Kind)
 	if !exists {
 		panic(fmt.Errorf("BUG: traffic controller not found"))
@@ -74,7 +75,7 @@ func NewIngressServer(superSpec *supervisor.Spec, super *supervisor.Supervisor,
 		superSpec: superSpec,
 
 		tc:        tc,
-		namespace: fmt.Sprintf("%s/%s", superSpec.Name(), "ingress"),
+		namespace: superSpec.Name(),
 
 		pipelines:   make(map[string]*supervisor.ObjectEntity),
 		httpServer:  nil,
@@ -132,7 +133,8 @@ func (ings *IngressServer) InitIngress(service *spec.Service, port uint32) error
 			logger.Infof("ingress enable TLS, init httpserver with cert: %#v", cert)
 		}
 
-		superSpec, err := service.SidecarIngressHTTPServerSpec(admSpec.WorkerSpec.Ingress.KeepAlive, admSpec.WorkerSpec.Ingress.KeepAliveTimeout, cert, rootCert)
+		superSpec, err := service.SidecarIngressHTTPServerSpec(admSpec.WorkerSpec.Ingress.KeepAlive,
+			admSpec.WorkerSpec.Ingress.KeepAliveTimeout, cert, rootCert)
 		if err != nil {
 			return err
 		}

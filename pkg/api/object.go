@@ -223,13 +223,7 @@ func (s *Server) getStatusObject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var status map[string]string
-	if _, ok := supervisor.TrafficObjectKinds[spec.Kind()]; ok {
-		status = s._getStatusObjectFromDefaultNamespace(name)
-	} else {
-		// NOTE: Maybe inconsistent, the object was deleted already here.
-		status = s._getStatusObject(name)
-	}
+	status := s._getStatusObject(name)
 
 	buff, err := yaml.Marshal(status)
 	if err != nil {

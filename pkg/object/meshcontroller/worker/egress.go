@@ -66,8 +66,8 @@ type (
 
 // NewEgressServer creates an initialized egress server
 func NewEgressServer(superSpec *supervisor.Spec, super *supervisor.Supervisor,
-	serviceName, instanceID string, service *service.Service) *EgressServer {
-
+	serviceName, instanceID string, service *service.Service,
+) *EgressServer {
 	entity, exists := super.GetSystemController(trafficcontroller.Kind)
 	if !exists {
 		panic(fmt.Errorf("BUG: traffic controller not found"))
@@ -86,7 +86,7 @@ func NewEgressServer(superSpec *supervisor.Spec, super *supervisor.Supervisor,
 
 		inf:         inf,
 		tc:          tc,
-		namespace:   fmt.Sprintf("%s/%s", superSpec.Name(), "egress"),
+		namespace:   superSpec.Name(),
 		pipelines:   make(map[string]*supervisor.ObjectEntity),
 		serviceName: serviceName,
 		service:     service,
@@ -121,7 +121,7 @@ func (egs *EgressServer) InitEgress(service *spec.Service) error {
 		return nil
 	}
 
-	egs.egressServerName = service.EgressHTTPServerName()
+	egs.egressServerName = service.SidecarEgressServerName()
 	admSpec := egs.superSpec.ObjectSpec().(*spec.Admin)
 	superSpec, err := service.SidecarEgressHTTPServerSpec(admSpec.WorkerSpec.Egress.KeepAlive, admSpec.WorkerSpec.Egress.KeepAliveTimeout)
 	if err != nil {

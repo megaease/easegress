@@ -22,11 +22,10 @@ import (
 	"fmt"
 	"net/http"
 	"path"
-	"reflect"
 	"sort"
 
 	"github.com/go-chi/chi/v5"
-	v1alpha1 "github.com/megaease/easemesh-api/v1alpha1"
+	v2alpha1 "github.com/megaease/easemesh-api/v2alpha1"
 
 	"github.com/megaease/easegress/pkg/api"
 	"github.com/megaease/easegress/pkg/logger"
@@ -54,9 +53,9 @@ func (a *API) listServices(w http.ResponseWriter, r *http.Request) {
 
 	sort.Sort(servicesByOrder(specs))
 
-	var apiSpecs []*v1alpha1.Service
+	var apiSpecs []*v2alpha1.Service
 	for _, v := range specs {
-		service := &v1alpha1.Service{}
+		service := &v2alpha1.Service{}
 		err := a.convertSpecToPB(v, service)
 		if err != nil {
 			logger.Errorf("convert spec %#v to pb spec failed: %v", v, err)
@@ -75,7 +74,7 @@ func (a *API) listServices(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) createService(w http.ResponseWriter, r *http.Request) {
-	pbServiceSpec := &v1alpha1.Service{}
+	pbServiceSpec := &v2alpha1.Service{}
 	serviceSpec := &spec.Service{}
 
 	err := a.readAPISpec(r, pbServiceSpec, serviceSpec)
@@ -122,7 +121,7 @@ func (a *API) getService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pbServiceSpec := &v1alpha1.Service{}
+	pbServiceSpec := &v2alpha1.Service{}
 	err = a.convertSpecToPB(serviceSpec, pbServiceSpec)
 	if err != nil {
 		panic(fmt.Errorf("convert spec %#v to pb failed: %v", serviceSpec, err))
@@ -138,7 +137,7 @@ func (a *API) getService(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) updateService(w http.ResponseWriter, r *http.Request) {
-	pbServiceSpec := &v1alpha1.Service{}
+	pbServiceSpec := &v2alpha1.Service{}
 	serviceSpec := &spec.Service{}
 
 	serviceName, err := a.readServiceName(r)
@@ -183,20 +182,6 @@ func (a *API) updateService(w http.ResponseWriter, r *http.Request) {
 
 		a.service.PutTenantSpec(newTenantSpec)
 		a.service.PutTenantSpec(oldTenantSpec)
-	}
-
-	globalCanaryHeaders := a.service.GetGlobalCanaryHeaders()
-	uniqueHeaders := serviceSpec.UniqueCanaryHeaders()
-	oldUniqueHeaders := oldSpec.UniqueCanaryHeaders()
-
-	if !reflect.DeepEqual(uniqueHeaders, oldUniqueHeaders) {
-		if globalCanaryHeaders == nil {
-			globalCanaryHeaders = &spec.GlobalCanaryHeaders{
-				ServiceHeaders: map[string][]string{},
-			}
-		}
-		globalCanaryHeaders.ServiceHeaders[serviceName] = uniqueHeaders
-		a.service.PutGlobalCanaryHeaders(globalCanaryHeaders)
 	}
 
 	a.service.PutServiceSpec(serviceSpec)

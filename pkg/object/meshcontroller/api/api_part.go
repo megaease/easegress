@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"net/http"
 
-	v1alpha1 "github.com/megaease/easemesh-api/v1alpha1"
+	v2alpha1 "github.com/megaease/easemesh-api/v2alpha1"
 
 	"github.com/megaease/easegress/pkg/api"
 	"github.com/megaease/easegress/pkg/object/meshcontroller/spec"
@@ -60,30 +60,9 @@ var (
 			}
 			serviceSpec.Mock = part.(*spec.Mock)
 		},
-		pbSt: v1alpha1.Mock{},
+		pbSt: v2alpha1.Mock{},
 		newPartPB: func() interface{} {
-			return &v1alpha1.Mock{}
-		},
-	}
-
-	canaryMeta = &partMeta{
-		partName: "canary",
-		newPart: func() interface{} {
-			return &spec.Canary{}
-		},
-		partOf: func(serviceSpec *spec.Service) (interface{}, bool) {
-			return serviceSpec.Canary, serviceSpec.Canary != nil
-		},
-		setPart: func(serviceSpec *spec.Service, part interface{}) {
-			if part == nil {
-				serviceSpec.Canary = nil
-				return
-			}
-			serviceSpec.Canary = part.(*spec.Canary)
-		},
-		pbSt: v1alpha1.Canary{},
-		newPartPB: func() interface{} {
-			return &v1alpha1.Canary{}
+			return &v2alpha1.Mock{}
 		},
 	}
 
@@ -101,9 +80,9 @@ var (
 			}
 			serviceSpec.Resilience = part.(*spec.Resilience)
 		},
-		pbSt: v1alpha1.Resilience{},
+		pbSt: v2alpha1.Resilience{},
 		newPartPB: func() interface{} {
-			return &v1alpha1.Resilience{}
+			return &v2alpha1.Resilience{}
 		},
 	}
 
@@ -122,9 +101,9 @@ var (
 			}
 			serviceSpec.LoadBalance = part.(*spec.LoadBalance)
 		},
-		pbSt: v1alpha1.LoadBalance{},
+		pbSt: v2alpha1.LoadBalance{},
 		newPartPB: func() interface{} {
-			return &v1alpha1.LoadBalance{}
+			return &v2alpha1.LoadBalance{}
 		},
 	}
 
@@ -149,9 +128,9 @@ var (
 			}
 			serviceSpec.Observability.OutputServer = part.(*spec.ObservabilityOutputServer)
 		},
-		pbSt: v1alpha1.ObservabilityOutputServer{},
+		pbSt: v2alpha1.ObservabilityOutputServer{},
 		newPartPB: func() interface{} {
-			return &v1alpha1.ObservabilityOutputServer{}
+			return &v2alpha1.ObservabilityOutputServer{}
 		},
 	}
 
@@ -176,9 +155,9 @@ var (
 			}
 			serviceSpec.Observability.Tracings = part.(*spec.ObservabilityTracings)
 		},
-		pbSt: v1alpha1.ObservabilityTracings{},
+		pbSt: v2alpha1.ObservabilityTracings{},
 		newPartPB: func() interface{} {
-			return &v1alpha1.ObservabilityTracings{}
+			return &v2alpha1.ObservabilityTracings{}
 		},
 	}
 
@@ -203,9 +182,9 @@ var (
 			}
 			serviceSpec.Observability.Metrics = part.(*spec.ObservabilityMetrics)
 		},
-		pbSt: v1alpha1.ObservabilityMetrics{},
+		pbSt: v2alpha1.ObservabilityMetrics{},
 		newPartPB: func() interface{} {
-			return &v1alpha1.ObservabilityMetrics{}
+			return &v2alpha1.ObservabilityMetrics{}
 		},
 	}
 )
@@ -280,37 +259,6 @@ func (a *API) createPartOfService(meta *partMeta) http.HandlerFunc {
 		if existed {
 			api.HandleAPIError(w, r, http.StatusConflict,
 				fmt.Errorf("%s of service %s existed", meta.partName, serviceName))
-			return
-		}
-
-		// NOTE: Canary is deprecated.
-		// Transform canary to new feature service canary.
-		// This block of code will be eliminated along with canary.
-		if meta.partName == "canary" {
-			canary := part.(*spec.Canary)
-			serviceCanaries := []*spec.ServiceCanary{}
-			for i, rules := range canary.CanaryRules {
-				serviceCanary := &spec.ServiceCanary{
-					Name:     fmt.Sprintf("%s-legacy-canary-%d", serviceName, i),
-					Priority: 5,
-					Selector: &spec.ServiceSelector{
-						MatchServices:       []string{serviceName},
-						MatchInstanceLabels: rules.ServiceInstanceLabels,
-					},
-					TrafficRules: &spec.TrafficRules{
-						Headers: rules.Headers,
-					},
-				}
-
-				serviceCanaries = append(serviceCanaries, serviceCanary)
-			}
-
-			for _, serviceCanary := range serviceCanaries {
-				a.service.PutServiceCanarySpec(serviceCanary)
-			}
-
-			w.WriteHeader(http.StatusCreated)
-
 			return
 		}
 
